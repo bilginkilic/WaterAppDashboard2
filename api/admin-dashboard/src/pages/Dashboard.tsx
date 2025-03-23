@@ -16,8 +16,14 @@ import {
   AppBar,
   Toolbar,
   Button,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import {
@@ -30,6 +36,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import {
+  Menu as MenuIcon,
+  Dashboard as DashboardIcon,
+  People as PeopleIcon,
+  ExitToApp as LogoutIcon,
+} from '@mui/icons-material';
 
 interface LeaderboardData {
   users: Array<{
@@ -56,10 +68,14 @@ interface LeaderboardData {
     totalTasksCompleted: number;
     averageTasksPerUser: string;
   };
+  dailyLeaders: any[];
+  weeklyLeaders: any[];
+  monthlyLeaders: any[];
 }
 
 const Dashboard: React.FC = () => {
   const [data, setData] = useState<LeaderboardData | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const { token, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -89,154 +105,101 @@ const Dashboard: React.FC = () => {
     navigate('/login');
   };
 
+  const toggleDrawer = () => {
+    setDrawerOpen(!drawerOpen);
+  };
+
+  const menuItems = [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Kullanıcılar', icon: <PeopleIcon />, path: '/users' },
+  ];
+
   if (!data) {
     return <Typography>Loading...</Typography>;
   }
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
+    <Box sx={{ display: 'flex' }}>
+      <AppBar position="fixed">
         <Toolbar>
+          <IconButton
+            color="inherit"
+            edge="start"
+            onClick={toggleDrawer}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            WaterApp Admin Dashboard
+            WaterApp Admin
           </Typography>
-          <Button color="inherit" onClick={handleLogout}>
-            Logout
+          <Button color="inherit" onClick={handleLogout} startIcon={<LogoutIcon />}>
+            Çıkış
           </Button>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Grid container spacing={3}>
-          {/* Statistics Cards */}
-          <Grid item xs={12} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Users
-                </Typography>
-                <Typography variant="h4">{data.statistics.totalUsers}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Average Improvement
-                </Typography>
-                <Typography variant="h4">{data.statistics.averageImprovement}%</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Total Tasks Completed
-                </Typography>
-                <Typography variant="h4">{data.statistics.totalTasksCompleted}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Avg Tasks per User
-                </Typography>
-                <Typography variant="h4">{data.statistics.averageTasksPerUser}</Typography>
-              </CardContent>
-            </Card>
-          </Grid>
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={toggleDrawer}
+      >
+        <Box
+          sx={{ width: 250 }}
+          role="presentation"
+          onClick={toggleDrawer}
+        >
+          <List>
+            {menuItems.map((item) => (
+              <ListItem
+                button
+                key={item.text}
+                component={Link}
+                to={item.path}
+              >
+                <ListItemIcon>{item.icon}</ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
 
-          {/* Best Initial Scores */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Best Initial Scores
-              </Typography>
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Name</TableCell>
-                      <TableCell align="right">Initial Waterprint</TableCell>
-                      <TableCell align="right">Correct Answers</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {data.bestInitialScores.map((score, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{score.name}</TableCell>
-                        <TableCell align="right">{score.initialWaterprint}</TableCell>
-                        <TableCell align="right">{score.correctAnswers}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
-          </Grid>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          mt: 8,
+        }}
+      >
+        <Container>
+          <Typography variant="h4" gutterBottom>
+            Liderlik Tablosu
+          </Typography>
+          
+          <Typography variant="h6" gutterBottom>
+            Günlük Liderler
+          </Typography>
+          <Paper sx={{ p: 2, mb: 3 }}>
+            {/* Daily leaderboard content */}
+          </Paper>
 
-          {/* Best Improvements */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Best Improvements
-              </Typography>
-              <TableContainer>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Name</TableCell>
-                      <TableCell align="right">Improvement</TableCell>
-                      <TableCell align="right">Tasks</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {data.bestImprovements.map((improvement, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{improvement.name}</TableCell>
-                        <TableCell align="right">{improvement.improvement}%</TableCell>
-                        <TableCell align="right">{improvement.tasksCompleted}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Paper>
-          </Grid>
+          <Typography variant="h6" gutterBottom>
+            Haftalık Liderler
+          </Typography>
+          <Paper sx={{ p: 2, mb: 3 }}>
+            {/* Weekly leaderboard content */}
+          </Paper>
 
-          {/* Improvement Chart */}
-          <Grid item xs={12}>
-            <Paper sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Top Improvements Chart
-              </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={data.bestImprovements}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="improvement" name="Improvement %" fill="#2196f3" />
-                  <Bar dataKey="tasksCompleted" name="Tasks Completed" fill="#4caf50" />
-                </BarChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Grid>
-        </Grid>
-      </Container>
+          <Typography variant="h6" gutterBottom>
+            Aylık Liderler
+          </Typography>
+          <Paper sx={{ p: 2 }}>
+            {/* Monthly leaderboard content */}
+          </Paper>
+        </Container>
+      </Box>
     </Box>
   );
 };

@@ -4,6 +4,15 @@ import jwt from 'jsonwebtoken';
 import { admin } from '../config/firebase';
 import { WaterprintProfile } from '../types/waterprint';
 
+interface UserData {
+  uid: string;
+  email: string;
+  displayName: string | null;
+  lastLoginAt: string | null;
+  createdAt: string;
+  waterprintData?: WaterprintProfile[];
+}
+
 export const adminLogin = async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
@@ -31,6 +40,56 @@ export const adminLogin = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Admin login error:', error);
     return res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+export const getUserList = async (req: Request, res: Response) => {
+  try {
+    // Get all users from Firebase
+    const userList = await admin.auth().listUsers();
+    
+    // Get waterprint data for each user
+    const usersWithData: UserData[] = await Promise.all(
+      userList.users.map(async (user) => {
+        try {
+          // Get user's waterprint data from Firestore
+          const waterprintSnapshot = await admin.firestore()
+            .collection('waterprints')
+            .where('userId', '==', user.uid)
+            .orderBy('date', 'desc')
+            .get();
+
+          const waterprintData = waterprintSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as WaterprintProfile[];
+
+          return {
+            uid: user.uid,
+            email: user.email || '',
+            displayName: user.displayName,
+            lastLoginAt: user.metadata.lastSignInTime,
+            createdAt: user.metadata.creationTime,
+            waterprintData
+          };
+        } catch (error) {
+          console.error(`Error fetching data for user ${user.uid}:`, error);
+          return {
+            uid: user.uid,
+            email: user.email || '',
+            displayName: user.displayName,
+            lastLoginAt: user.metadata.lastSignInTime,
+            createdAt: user.metadata.creationTime,
+            waterprintData: []
+          };
+        }
+      })
+    );
+
+    res.json(usersWithData);
+  } catch (error) {
+    console.error('Error fetching user list:', error);
+    res.status(500).json({ message: 'Error fetching user list', error });
   }
 };
 
