@@ -11,7 +11,8 @@ import {
   DataGrid,
   GridColDef,
   GridToolbar,
-  GridValueGetterParams,
+  GridValueGetterParams as BaseGridValueGetterParams,
+  GridRenderCellParams,
 } from '@mui/x-data-grid';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,6 +34,10 @@ interface UserData {
   lastLoginAt: string | null;
   createdAt: string;
   waterprintData?: WaterprintData[];
+}
+
+interface GridValueGetterParams extends BaseGridValueGetterParams {
+  row: UserData;
 }
 
 const Users: React.FC = () => {
@@ -98,7 +103,7 @@ const Users: React.FC = () => {
       valueGetter: (params: GridValueGetterParams) => {
         const data = params.row.waterprintData || [];
         if (data.length === 0) return 0;
-        const total = data.reduce((sum, entry) => sum + entry.totalWaterUsage, 0);
+        const total = data.reduce((sum: number, entry: WaterprintData) => sum + entry.totalWaterUsage, 0);
         return Math.round(total / data.length);
       },
     },
@@ -129,11 +134,11 @@ const Users: React.FC = () => {
         <DataGrid
           rows={users}
           columns={columns}
-          getRowId={(row) => row.uid}
-          components={{
-            Toolbar: GridToolbar,
+          getRowId={(row: UserData) => row.uid}
+          slots={{
+            toolbar: GridToolbar,
           }}
-          componentsProps={{
+          slotProps={{
             toolbar: {
               csvOptions: { 
                 fileName: 'waterapp-users',
@@ -141,10 +146,15 @@ const Users: React.FC = () => {
               },
             },
           }}
-          disableSelectionOnClick
-          pagination
-          pageSize={10}
-          rowsPerPageOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
+          initialState={{
+            pagination: {
+              paginationModel: {
+                pageSize: 10,
+              },
+            },
+          }}
+          pageSizeOptions={[10, 25, 50]}
           sx={{
             '& .MuiDataGrid-toolbarContainer': {
               padding: 2,

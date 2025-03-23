@@ -67,9 +67,9 @@ export const getUserList = async (req: Request, res: Response) => {
           return {
             uid: user.uid,
             email: user.email || '',
-            displayName: user.displayName,
-            lastLoginAt: user.metadata.lastSignInTime,
-            createdAt: user.metadata.creationTime,
+            displayName: user.displayName || null,
+            lastLoginAt: user.metadata.lastSignInTime || null,
+            createdAt: user.metadata.creationTime || '',
             waterprintData
           };
         } catch (error) {
@@ -77,9 +77,9 @@ export const getUserList = async (req: Request, res: Response) => {
           return {
             uid: user.uid,
             email: user.email || '',
-            displayName: user.displayName,
-            lastLoginAt: user.metadata.lastSignInTime,
-            createdAt: user.metadata.creationTime,
+            displayName: user.displayName || null,
+            lastLoginAt: user.metadata.lastSignInTime || null,
+            createdAt: user.metadata.creationTime || '',
             waterprintData: []
           };
         }
