@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
-import { admin } from '../config/firebase';
+import { firebaseAdmin } from '../config/firebase';
 import { WaterprintProfile } from '../types/waterprint';
 
 interface UserData {
@@ -36,14 +36,14 @@ export const adminLogin = async (req: Request, res: Response) => {
 export const getUserList = async (req: Request, res: Response) => {
   try {
     // Get all users from Firebase
-    const userList = await admin.auth().listUsers();
+    const userList = await firebaseAdmin.auth().listUsers();
     
     // Get waterprint data for each user
     const usersWithData: UserData[] = await Promise.all(
       userList.users.map(async (user) => {
         try {
           // Get user's waterprint data from Firestore
-          const waterprintSnapshot = await admin.firestore()
+          const waterprintSnapshot = await firebaseAdmin.firestore()
             .collection('waterprints')
             .where('userId', '==', user.uid)
             .orderBy('date', 'desc')
@@ -107,7 +107,7 @@ export const getLeaderboards = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const listUsersResult = await admin.auth().listUsers();
+    const listUsersResult = await firebaseAdmin.auth().listUsers();
     const users = listUsersResult.users.map(user => ({
       id: user.uid,
       email: user.email,
@@ -125,7 +125,7 @@ export const getUsers = async (req: Request, res: Response) => {
 export const getStatistics = async (req: Request, res: Response) => {
   try {
     // Kullanıcı listesini al
-    const listUsersResult = await admin.auth().listUsers();
+    const listUsersResult = await firebaseAdmin.auth().listUsers();
     const users = listUsersResult.users;
     console.log('Total users:', users.length);
     
@@ -142,7 +142,7 @@ export const getStatistics = async (req: Request, res: Response) => {
     console.log('Active users:', activeUsers);
 
     // Waterprint verilerini al
-    const waterprintSnapshot = await admin.firestore()
+    const waterprintSnapshot = await firebaseAdmin.firestore()
       .collection('WaterprintProfiles')
       .get();
 
