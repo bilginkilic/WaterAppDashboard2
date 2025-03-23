@@ -3,7 +3,6 @@ import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { admin } from '../config/firebase';
 import { WaterprintProfile } from '../types/waterprint';
-import admin from 'firebase-admin';
 
 interface UserData {
   uid: string;
@@ -125,8 +124,10 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const getStatistics = async (req: Request, res: Response) => {
   try {
+    // Kullanıcı listesini al
     const listUsersResult = await admin.auth().listUsers();
     const users = listUsersResult.users;
+    console.log('Total users:', users.length);
     
     // Son 30 gün içinde giriş yapmış kullanıcıları aktif sayalım
     const thirtyDaysAgo = new Date();
@@ -138,14 +139,47 @@ export const getStatistics = async (req: Request, res: Response) => {
         : null;
       return lastSignIn && lastSignIn > thirtyDaysAgo;
     }).length;
+    console.log('Active users:', activeUsers);
 
-    // Örnek istatistikler (gerçek veriler için veritabanı entegrasyonu gerekli)
+    // Waterprint verilerini al
+    const waterprintSnapshot = await admin.firestore()
+      .collection('WaterprintProfiles')
+      .get();
+
+    const waterprints = waterprintSnapshot.docs.map(doc => {
+      const data = doc.data();
+      console.log('Waterprint data:', data);
+      return data;
+    });
+    console.log('Total waterprints:', waterprints.length);
+    
+    // Ortalama su tüketimini hesapla
+    const averageWaterUsage = waterprints.length > 0
+      ? Math.round(waterprints.reduce((acc, curr) => {
+          const usage = curr.totalWaterUsage || 0;
+          console.log('Water usage:', usage);
+          return acc + usage;
+        }, 0) / waterprints.length)
+      : 0;
+    console.log('Average water usage:', averageWaterUsage);
+
+    // Toplam tasarrufu hesapla (başlangıç - şimdiki tüketim)
+    const totalWaterSaved = waterprints.reduce((acc, curr) => {
+      const initial = curr.initialWaterUsage || 0;
+      const current = curr.totalWaterUsage || 0;
+      const saved = initial - current;
+      console.log('Initial:', initial, 'Current:', current, 'Saved:', saved);
+      return acc + (saved > 0 ? saved : 0);
+    }, 0);
+    console.log('Total water saved:', totalWaterSaved);
+
     const stats = {
       totalUsers: users.length,
       activeUsers,
-      averageWaterUsage: 150, // Örnek değer
-      totalWaterSaved: 5000, // Örnek değer
+      averageWaterUsage,
+      totalWaterSaved: Math.round(totalWaterSaved),
     };
+    console.log('Final stats:', stats);
 
     res.json(stats);
   } catch (error) {
