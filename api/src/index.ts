@@ -1,3 +1,4 @@
+import * as functions from 'firebase-functions';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -19,6 +20,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/waterprint', waterprintRoutes);
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
-}); 
+});
+
+// Export the Express app as a Firebase Function
+export const api = functions.https.onRequest(app); 
