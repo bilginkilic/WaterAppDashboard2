@@ -1,5 +1,6 @@
 # Dependencies
-/node_modules
+**/node_modules
+node_modules
 /.pnp
 .pnp.js
 
@@ -9,6 +10,8 @@
 # Production
 /build
 /dist
+**/build
+**/dist
 
 # Misc
 .DS_Store
@@ -18,11 +21,14 @@
 .env.test.local
 .env.production.local
 *.pem
+.env*
+!.env.example
 
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
 
 # IDE specific files
 .idea
@@ -42,6 +48,8 @@ Thumbs.db
 # Next.js
 /.next/
 /out/
+**/.next
+**/out
 
 # Local Netlify folder
 .netlify
@@ -54,10 +62,11 @@ next-env.d.ts
 .cache
 **/.cache
 **/node_modules/.cache
-**/node_modules
-api/**/node_modules
-api/**/.cache
 
-# Large files
+# Build files
 *.pack
-**/*.pack 
+**/*.pack
+
+# Firebase
+**/firebase-adminsdk*.json
+firebase-service-account.json 
