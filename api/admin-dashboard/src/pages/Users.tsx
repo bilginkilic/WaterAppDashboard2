@@ -11,8 +11,7 @@ import {
   DataGrid,
   GridColDef,
   GridToolbar,
-  GridValueGetterParams as BaseGridValueGetterParams,
-  GridRenderCellParams,
+  GridValueGetter,
 } from '@mui/x-data-grid';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,16 +27,11 @@ interface WaterprintData {
 }
 
 interface UserData {
-  uid: string;
+  id: string;
   email: string;
   displayName: string | null;
-  lastLoginAt: string | null;
   createdAt: string;
-  waterprintData?: WaterprintData[];
-}
-
-interface GridValueGetterParams extends BaseGridValueGetterParams {
-  row: UserData;
+  lastLoginAt: string | null;
 }
 
 const Users: React.FC = () => {
@@ -71,40 +65,34 @@ const Users: React.FC = () => {
   }, [token]);
 
   const columns: GridColDef[] = [
-    { field: 'email', headerName: 'Email', width: 200 },
-    { field: 'displayName', headerName: 'İsim', width: 150 },
+    { field: 'id', headerName: 'ID', width: 90 },
+    {
+      field: 'email',
+      headerName: 'Email',
+      width: 200,
+    },
+    {
+      field: 'displayName',
+      headerName: 'İsim',
+      width: 150,
+      valueGetter: (value, row: UserData) => row.displayName || '-',
+    },
     {
       field: 'createdAt',
       headerName: 'Kayıt Tarihi',
-      width: 180,
-      valueGetter: (params: GridValueGetterParams) =>
-        format(new Date(params.row.createdAt), 'dd.MM.yyyy HH:mm'),
+      width: 200,
+      valueGetter: (value, row: UserData) => {
+        const date = row.createdAt;
+        return date ? format(new Date(date), 'dd/MM/yyyy HH:mm') : '-';
+      },
     },
     {
       field: 'lastLoginAt',
       headerName: 'Son Giriş',
-      width: 180,
-      valueGetter: (params: GridValueGetterParams) =>
-        params.row.lastLoginAt
-          ? format(new Date(params.row.lastLoginAt), 'dd.MM.yyyy HH:mm')
-          : '-',
-    },
-    {
-      field: 'totalEntries',
-      headerName: 'Toplam Kayıt',
-      width: 130,
-      valueGetter: (params: GridValueGetterParams) =>
-        params.row.waterprintData?.length || 0,
-    },
-    {
-      field: 'averageUsage',
-      headerName: 'Ort. Su Tüketimi',
-      width: 150,
-      valueGetter: (params: GridValueGetterParams) => {
-        const data = params.row.waterprintData || [];
-        if (data.length === 0) return 0;
-        const total = data.reduce((sum: number, entry: WaterprintData) => sum + entry.totalWaterUsage, 0);
-        return Math.round(total / data.length);
+      width: 200,
+      valueGetter: (value, row: UserData) => {
+        const date = row.lastLoginAt;
+        return date ? format(new Date(date), 'dd/MM/yyyy HH:mm') : '-';
       },
     },
   ];
@@ -134,7 +122,7 @@ const Users: React.FC = () => {
         <DataGrid
           rows={users}
           columns={columns}
-          getRowId={(row: UserData) => row.uid}
+          getRowId={(row: UserData) => row.id}
           slots={{
             toolbar: GridToolbar,
           }}
