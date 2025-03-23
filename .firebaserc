@@ -1,0 +1,13 @@
+{
+  "projects": {},
+  "targets": {
+    "waterappdaily": {
+      "hosting": {
+        "admin": [
+          "waterappdaily"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
