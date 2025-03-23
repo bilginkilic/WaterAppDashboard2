@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (username: string, password: string) => {
     try {
-      const response = await axios.post<LoginResponse>('http://localhost:3001/api/admin/login', {
+      const response = await axios.post<LoginResponse>('https://us-central1-waterappdaily.cloudfunctions.net/api/api/admin/login', {
         username,
         password,
       });
