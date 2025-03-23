@@ -1,30 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  CircularProgress,
-  Alert,
-} from '@mui/material';
-import {
-  DataGrid,
-  GridColDef,
-  GridToolbar,
-  GridValueGetter,
-} from '@mui/x-data-grid';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { Container, Typography } from '@mui/material';
+import { DataGrid, GridColDef, GridToolbar } from '@mui/x-data-grid';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import { format } from 'date-fns';
-
-interface WaterprintData {
-  id: string;
-  date: string;
-  totalWaterUsage: number;
-  categories: {
-    [key: string]: number;
-  };
-}
 
 interface UserData {
   id: string;
@@ -36,8 +15,6 @@ interface UserData {
 
 const Users: React.FC = () => {
   const [users, setUsers] = useState<UserData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
 
   useEffect(() => {
@@ -47,17 +24,12 @@ const Users: React.FC = () => {
           ? process.env.REACT_APP_PRODUCTION_API_URL
           : process.env.REACT_APP_API_URL;
 
-        const response = await axios.get<UserData[]>(`${apiUrl}/api/admin/users`, {
+        const response = await axios.get(`${apiUrl}/api/admin/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         setUsers(response.data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching users:', err);
-        setError('Kullanıcı listesi alınamadı');
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching users:', error);
       }
     };
 
@@ -97,28 +69,12 @@ const Users: React.FC = () => {
     },
   ];
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box m={3}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
-    );
-  }
-
   return (
-    <Box p={3}>
+    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Kullanıcı Listesi
+        Kullanıcılar
       </Typography>
-      <Paper sx={{ height: 600, width: '100%' }}>
+      <div style={{ height: 600, width: '100%' }}>
         <DataGrid
           rows={users}
           columns={columns}
@@ -126,31 +82,13 @@ const Users: React.FC = () => {
           slots={{
             toolbar: GridToolbar,
           }}
-          slotProps={{
-            toolbar: {
-              csvOptions: { 
-                fileName: 'waterapp-users',
-                delimiter: ';',
-              },
-            },
-          }}
-          disableRowSelectionOnClick
           initialState={{
-            pagination: {
-              paginationModel: {
-                pageSize: 10,
-              },
-            },
+            pagination: { paginationModel: { pageSize: 10 } },
           }}
-          pageSizeOptions={[10, 25, 50]}
-          sx={{
-            '& .MuiDataGrid-toolbarContainer': {
-              padding: 2,
-            },
-          }}
+          pageSizeOptions={[10, 25, 50, 100]}
         />
-      </Paper>
-    </Box>
+      </div>
+    </Container>
   );
 };
 
