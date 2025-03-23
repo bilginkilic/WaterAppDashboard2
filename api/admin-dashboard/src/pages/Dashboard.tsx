@@ -1,59 +1,87 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
 import {
   Container,
-  Typography,
+  Grid,
   Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Box,
+  Card,
+  CardContent,
   AppBar,
   Toolbar,
   Button,
-  IconButton,
-  Drawer,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 import {
-  Menu as MenuIcon,
-  Dashboard as DashboardIcon,
-  People as PeopleIcon,
-  ExitToApp as LogoutIcon,
-} from '@mui/icons-material';
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
 
-interface Statistics {
-  totalUsers: number;
-  activeUsers: number;
-  averageWaterUsage: number;
-  totalWaterSaved: number;
+interface LeaderboardData {
+  users: Array<{
+    id: string;
+    username: string;
+    totalWaterAmount: number;
+    rank: number;
+  }>;
+  bestInitialScores: Array<{
+    name: string;
+    initialWaterprint: number;
+    correctAnswers: number;
+  }>;
+  bestImprovements: Array<{
+    name: string;
+    improvement: string;
+    initialWaterprint: number;
+    currentWaterprint: number;
+    tasksCompleted: number;
+  }>;
+  statistics: {
+    totalUsers: number;
+    averageImprovement: string;
+    totalTasksCompleted: number;
+    averageTasksPerUser: string;
+  };
 }
 
 const Dashboard: React.FC = () => {
-  const [stats, setStats] = useState<Statistics | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [data, setData] = useState<LeaderboardData | null>(null);
   const { token, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const apiUrl = process.env.NODE_ENV === 'production'
-          ? process.env.REACT_APP_PRODUCTION_API_URL
+        const apiUrl = process.env.NODE_ENV === 'production' 
+          ? process.env.REACT_APP_PRODUCTION_API_URL 
           : process.env.REACT_APP_API_URL;
 
-        const response = await axios.get(`${apiUrl}/api/admin/statistics`, {
+        const response = await axios.get<LeaderboardData>(`${apiUrl}/api/admin/leaderboards`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setStats(response.data);
+        setData(response.data);
       } catch (error) {
-        console.error('Error fetching statistics:', error);
+        console.error('Error fetching data:', error);
       }
     };
 
-    fetchStats();
+    fetchData();
+    const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
   }, [token]);
 
   const handleLogout = () => {
@@ -61,124 +89,154 @@ const Dashboard: React.FC = () => {
     navigate('/login');
   };
 
-  const toggleDrawer = () => {
-    setDrawerOpen(!drawerOpen);
-  };
-
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Kullanıcılar', icon: <PeopleIcon />, path: '/users' },
-  ];
+  if (!data) {
+    return <Typography>Loading...</Typography>;
+  }
 
   return (
-    <Box sx={{ display: 'flex' }}>
-      <AppBar position="fixed">
+    <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static">
         <Toolbar>
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={toggleDrawer}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            WaterApp Admin
+            WaterApp Admin Dashboard
           </Typography>
-          <Button color="inherit" onClick={handleLogout} startIcon={<LogoutIcon />}>
-            Çıkış
+          <Button color="inherit" onClick={handleLogout}>
+            Logout
           </Button>
         </Toolbar>
       </AppBar>
 
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-      >
-        <Box
-          sx={{ width: 250 }}
-          role="presentation"
-          onClick={toggleDrawer}
-        >
-          <List>
-            {menuItems.map((item) => (
-              <ListItem
-                button
-                key={item.text}
-                component={Link}
-                to={item.path}
-              >
-                <ListItemIcon>{item.icon}</ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Grid container spacing={3}>
+          {/* Statistics Cards */}
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Total Users
+                </Typography>
+                <Typography variant="h4">{data.statistics.totalUsers}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Average Improvement
+                </Typography>
+                <Typography variant="h4">{data.statistics.averageImprovement}%</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Total Tasks Completed
+                </Typography>
+                <Typography variant="h4">{data.statistics.totalTasksCompleted}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={3}>
+            <Card>
+              <CardContent>
+                <Typography color="textSecondary" gutterBottom>
+                  Avg Tasks per User
+                </Typography>
+                <Typography variant="h4">{data.statistics.averageTasksPerUser}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
 
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          mt: 8,
-        }}
-      >
-        <Container maxWidth="lg">
-          <Typography variant="h4" gutterBottom>
-            Su Tüketimi Yönetim Paneli
-          </Typography>
-
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 3, mb: 4 }}>
-            <Paper sx={{ p: 3 }}>
+          {/* Best Initial Scores */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 2 }}>
               <Typography variant="h6" gutterBottom>
-                Toplam Kullanıcı
+                Best Initial Scores
               </Typography>
-              <Typography variant="h4">
-                {stats?.totalUsers || 0}
-              </Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Name</TableCell>
+                      <TableCell align="right">Initial Waterprint</TableCell>
+                      <TableCell align="right">Correct Answers</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.bestInitialScores.map((score, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{score.name}</TableCell>
+                        <TableCell align="right">{score.initialWaterprint}</TableCell>
+                        <TableCell align="right">{score.correctAnswers}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Paper>
+          </Grid>
 
-            <Paper sx={{ p: 3 }}>
+          {/* Best Improvements */}
+          <Grid item xs={12} md={6}>
+            <Paper sx={{ p: 2 }}>
               <Typography variant="h6" gutterBottom>
-                Aktif Kullanıcı
+                Best Improvements
               </Typography>
-              <Typography variant="h4">
-                {stats?.activeUsers || 0}
-              </Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Name</TableCell>
+                      <TableCell align="right">Improvement</TableCell>
+                      <TableCell align="right">Tasks</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {data.bestImprovements.map((improvement, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{improvement.name}</TableCell>
+                        <TableCell align="right">{improvement.improvement}%</TableCell>
+                        <TableCell align="right">{improvement.tasksCompleted}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
             </Paper>
+          </Grid>
 
-            <Paper sx={{ p: 3 }}>
+          {/* Improvement Chart */}
+          <Grid item xs={12}>
+            <Paper sx={{ p: 2 }}>
               <Typography variant="h6" gutterBottom>
-                Ortalama Su Tüketimi
+                Top Improvements Chart
               </Typography>
-              <Typography variant="h4">
-                {stats?.averageWaterUsage || 0} L
-              </Typography>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={data.bestImprovements}
+                  margin={{
+                    top: 5,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="improvement" name="Improvement %" fill="#2196f3" />
+                  <Bar dataKey="tasksCompleted" name="Tasks Completed" fill="#4caf50" />
+                </BarChart>
+              </ResponsiveContainer>
             </Paper>
-
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Toplam Tasarruf
-              </Typography>
-              <Typography variant="h4">
-                {stats?.totalWaterSaved || 0} L
-              </Typography>
-            </Paper>
-          </Box>
-
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>
-              Hoş geldiniz!
-            </Typography>
-            <Typography variant="body1">
-              Bu panel üzerinden kullanıcıları ve su tüketim verilerini yönetebilirsiniz.
-              Yukarıdaki istatistikler sistemdeki genel durumu göstermektedir.
-            </Typography>
-          </Paper>
-        </Container>
-      </Box>
+          </Grid>
+        </Grid>
+      </Container>
     </Box>
   );
 };
