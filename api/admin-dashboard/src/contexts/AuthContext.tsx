@@ -27,10 +27,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (username: string, password: string) => {
     try {
-      const apiUrl = process.env.NODE_ENV === 'production' 
-        ? process.env.REACT_APP_PRODUCTION_API_URL 
-        : process.env.REACT_APP_API_URL;
-        
+      const apiUrl = process.env.REACT_APP_PRODUCTION_API_URL || process.env.REACT_APP_API_URL;
+      if (!apiUrl) {
+        throw new Error('API URL is not configured');
+      }
+
       const response = await axios.post<LoginResponse>(`${apiUrl}/api/admin/login`, {
         username,
         password,
@@ -40,6 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('adminToken', token);
       setToken(token);
     } catch (error) {
+      console.error('Login error:', error);
       throw new Error('Login failed');
     }
   }, []);
