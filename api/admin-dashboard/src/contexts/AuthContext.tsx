@@ -17,13 +17,17 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+interface LoginResponse {
+  token: string;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));
   const isAuthenticated = Boolean(token);
 
   const login = useCallback(async (username: string, password: string) => {
     try {
-      const response = await axios.post('http://localhost:3000/api/admin/login', {
+      const response = await axios.post<LoginResponse>('http://localhost:3001/api/admin/login', {
         username,
         password,
       });

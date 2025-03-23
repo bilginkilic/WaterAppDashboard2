@@ -32,6 +32,12 @@ import {
 } from 'recharts';
 
 interface LeaderboardData {
+  users: Array<{
+    id: string;
+    username: string;
+    totalWaterAmount: number;
+    rank: number;
+  }>;
   bestInitialScores: Array<{
     name: string;
     initialWaterprint: number;
@@ -60,7 +66,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/admin/leaderboards', {
+        const response = await axios.get<LeaderboardData>('http://localhost:3001/api/admin/leaderboards', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setData(response.data);
