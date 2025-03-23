@@ -3,6 +3,17 @@ import { validationResult } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { admin } from '../config/firebase';
+import axios from 'axios';
+
+interface FirebaseAuthResponse {
+  localId: string;
+  email: string;
+  displayName?: string;
+  idToken: string;
+  registered: boolean;
+  refreshToken: string;
+  expiresIn: string;
+}
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -45,23 +56,50 @@ export const login = async (req: Request, res: Response) => {
 
     const { email, password } = req.body;
 
-    // Sign in with Firebase Auth
-    const userRecord = await admin.auth().getUserByEmail(email);
-    
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: userRecord.uid },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
-    );
+    try {
+      // Get Firebase Web API Key from environment variable
+      const apiKey = process.env.FIREBASE_WEB_API_KEY;
+      if (!apiKey) {
+        throw new Error('Firebase Web API Key is not configured');
+      }
 
-    res.json({
-      userId: userRecord.uid,
-      token,
-      name: userRecord.displayName
-    });
+      // Sign in with Firebase Auth REST API
+      const signInResponse = await axios.post<FirebaseAuthResponse>(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+        {
+          email,
+          password,
+          returnSecureToken: true
+        }
+      );
+
+      if (!signInResponse.data || !signInResponse.data.localId) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Get user details
+      const userRecord = await admin.auth().getUser(signInResponse.data.localId);
+      
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: userRecord.uid },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '24h' }
+      );
+
+      res.json({
+        userId: userRecord.uid,
+        token,
+        name: userRecord.displayName
+      });
+    } catch (error) {
+      // Firebase Authentication error
+      console.error('Auth error:', error);
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
   } catch (error) {
-    res.status(401).json({ message: 'Invalid credentials' });
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
