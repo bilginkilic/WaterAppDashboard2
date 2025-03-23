@@ -66,7 +66,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get<LeaderboardData>('http://localhost:3001/api/admin/leaderboards', {
+        const response = await axios.get<LeaderboardData>('https://us-central1-waterappdaily.cloudfunctions.net/api/api/admin/leaderboards', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setData(response.data);
