@@ -48,4 +48,16 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
-next-env.d.ts 
+next-env.d.ts
+
+# Cache directories
+.cache
+**/.cache
+**/node_modules/.cache
+**/node_modules
+api/**/node_modules
+api/**/.cache
+
+# Large files
+*.pack
+**/*.pack 
