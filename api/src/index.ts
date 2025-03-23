@@ -13,7 +13,10 @@ const port = process.env.PORT || 3001;
 // Middleware
 app.use(cors({
   origin: ['https://waterappdaily.netlify.app', 'http://localhost:3000'],
-  credentials: true
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200
 }));
 app.use(express.json());
 
