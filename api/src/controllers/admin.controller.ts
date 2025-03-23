@@ -3,6 +3,7 @@ import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { admin } from '../config/firebase';
 import { WaterprintProfile } from '../types/waterprint';
+import admin from 'firebase-admin';
 
 interface UserData {
   uid: string;
@@ -13,34 +14,24 @@ interface UserData {
   waterprintData?: WaterprintProfile[];
 }
 
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@waterapp.com';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
 export const adminLogin = async (req: Request, res: Response) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { username, password } = req.body;
-
-    // Static admin credentials check
-    if (username === 'admin' && password === 'admin123') {
-      const token = jwt.sign(
-        { username, isAdmin: true },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
-      );
-
-      return res.json({
-        token,
-        message: 'Admin login successful'
-      });
-    }
-
-    return res.status(401).json({ message: 'Invalid admin credentials' });
-  } catch (error) {
-    console.error('Admin login error:', error);
-    return res.status(500).json({ message: 'Server error', error });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
   }
+
+  const { email, password } = req.body;
+
+  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ message: 'Geçersiz email veya şifre' });
+  }
+
+  const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+  res.json({ token });
 };
 
 export const getUserList = async (req: Request, res: Response) => {
@@ -95,75 +86,70 @@ export const getUserList = async (req: Request, res: Response) => {
 
 export const getLeaderboards = async (req: Request, res: Response) => {
   try {
-    const profilesSnapshot = await admin.firestore()
-      .collection('WaterprintProfiles')
-      .get();
-
-    const profiles = profilesSnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })) as WaterprintProfile[];
-
-    // Calculate best initial scores (lowest initial waterprint)
-    const bestInitialScores = [...profiles]
-      .sort((a, b) => a.initialWaterprint - b.initialWaterprint)
-      .slice(0, 10)
-      .map(async profile => {
-        const user = await admin.auth().getUser(profile.userId);
-        return {
-          name: user.displayName || 'Anonymous',
-          initialWaterprint: profile.initialWaterprint,
-          correctAnswers: profile.initialAssessment.correctAnswersCount
-        };
-      });
-
-    // Calculate best improvements
-    const bestImprovements = [...profiles]
-      .map(profile => ({
-        ...profile,
-        improvement: ((profile.initialWaterprint - profile.currentWaterprint) / profile.initialWaterprint) * 100
-      }))
-      .sort((a, b) => b.improvement - a.improvement)
-      .slice(0, 10)
-      .map(async profile => {
-        const user = await admin.auth().getUser(profile.userId);
-        return {
-          name: user.displayName || 'Anonymous',
-          improvement: profile.improvement.toFixed(2),
-          initialWaterprint: profile.initialWaterprint,
-          currentWaterprint: profile.currentWaterprint,
-          tasksCompleted: profile.completedTasks.length
-        };
-      });
-
-    const [bestInitial, bestImprovement] = await Promise.all([
-      Promise.all(bestInitialScores),
-      Promise.all(bestImprovements)
-    ]);
-
-    // Calculate statistics
-    const totalUsers = profiles.length;
-    const averageImprovement = profiles.length > 0 
-      ? (profiles.reduce((acc, profile) => 
-          acc + ((profile.initialWaterprint - profile.currentWaterprint) / profile.initialWaterprint) * 100, 0
-        ) / profiles.length).toFixed(2)
-      : "0.00";
-
-    const totalTasksCompleted = profiles.reduce((acc, profile) => acc + profile.completedTasks.length, 0);
-    const averageTasksPerUser = (totalTasksCompleted / totalUsers).toFixed(1);
-
-    return res.json({
-      bestInitialScores: bestInitial,
-      bestImprovements: bestImprovement,
+    // Örnek liderlik tablosu verileri
+    const leaderboardData = {
+      dailyLeaders: [],
+      weeklyLeaders: [],
+      monthlyLeaders: [],
       statistics: {
-        totalUsers,
-        averageImprovement,
-        totalTasksCompleted,
-        averageTasksPerUser
-      }
-    });
+        totalUsers: 0,
+        averageImprovement: '0%',
+        totalTasksCompleted: 0,
+        averageTasksPerUser: '0',
+      },
+    };
+
+    res.json(leaderboardData);
   } catch (error) {
-    console.error('Leaderboards error:', error);
-    return res.status(500).json({ message: 'Server error', error });
+    console.error('Error fetching leaderboards:', error);
+    res.status(500).json({ error: 'Liderlik tablosu alınamadı' });
+  }
+};
+
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const listUsersResult = await admin.auth().listUsers();
+    const users = listUsersResult.users.map(user => ({
+      id: user.uid,
+      email: user.email,
+      displayName: user.displayName || null,
+      createdAt: user.metadata.creationTime,
+      lastLoginAt: user.metadata.lastSignInTime || null,
+    }));
+    res.json(users);
+  } catch (error) {
+    console.error('Error listing users:', error);
+    res.status(500).json({ error: 'Kullanıcı listesi alınamadı' });
+  }
+};
+
+export const getStatistics = async (req: Request, res: Response) => {
+  try {
+    const listUsersResult = await admin.auth().listUsers();
+    const users = listUsersResult.users;
+    
+    // Son 30 gün içinde giriş yapmış kullanıcıları aktif sayalım
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const activeUsers = users.filter(user => {
+      const lastSignIn = user.metadata.lastSignInTime 
+        ? new Date(user.metadata.lastSignInTime) 
+        : null;
+      return lastSignIn && lastSignIn > thirtyDaysAgo;
+    }).length;
+
+    // Örnek istatistikler (gerçek veriler için veritabanı entegrasyonu gerekli)
+    const stats = {
+      totalUsers: users.length,
+      activeUsers,
+      averageWaterUsage: 150, // Örnek değer
+      totalWaterSaved: 5000, // Örnek değer
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching statistics:', error);
+    res.status(500).json({ error: 'İstatistikler alınamadı' });
   }
 }; 
