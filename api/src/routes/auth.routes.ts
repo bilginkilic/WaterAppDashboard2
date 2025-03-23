@@ -7,9 +7,9 @@ const router = express.Router();
 // Register route
 router.post('/register',
   [
-    body('email').isEmail(),
-    body('password').isLength({ min: 6 }),
-    body('name').notEmpty()
+    body('email').isEmail().withMessage('Geçerli bir email adresi giriniz'),
+    body('password').isLength({ min: 6 }).withMessage('Şifre en az 6 karakter olmalıdır'),
+    body('name').notEmpty().withMessage('İsim alanı boş bırakılamaz')
   ],
   (req: Request, res: Response) => {
     void register(req, res);
@@ -19,8 +19,8 @@ router.post('/register',
 // Login route
 router.post('/login',
   [
-    body('email').isEmail(),
-    body('password').exists()
+    body('email').isEmail().withMessage('Geçerli bir email adresi giriniz'),
+    body('password').isLength({ min: 6 }).withMessage('Şifre en az 6 karakter olmalıdır')
   ],
   (req: Request, res: Response) => {
     void login(req, res);
@@ -30,7 +30,7 @@ router.post('/login',
 // Forgot password route
 router.post('/forgot-password',
   [
-    body('email').isEmail()
+    body('email').isEmail().withMessage('Geçerli bir email adresi giriniz')
   ],
   (req: Request, res: Response) => {
     void forgotPassword(req, res);
@@ -40,8 +40,8 @@ router.post('/forgot-password',
 // Reset password route
 router.post('/reset-password',
   [
-    body('token').exists(),
-    body('newPassword').isLength({ min: 6 })
+    body('token').exists().withMessage('Token gereklidir'),
+    body('newPassword').isLength({ min: 6 }).withMessage('Yeni şifre en az 6 karakter olmalıdır')
   ],
   (req: Request, res: Response) => {
     void resetPassword(req, res);

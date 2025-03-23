@@ -51,7 +51,10 @@ export const login = async (req: Request, res: Response) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+      return res.status(400).json({ 
+        message: 'Validation error',
+        errors: errors.array() 
+      });
     }
 
     const { email, password } = req.body;
@@ -60,7 +63,8 @@ export const login = async (req: Request, res: Response) => {
       // Get Firebase Web API Key from environment variable
       const apiKey = process.env.FIREBASE_WEB_API_KEY;
       if (!apiKey) {
-        throw new Error('Firebase Web API Key is not configured');
+        console.error('Firebase Web API Key is missing');
+        return res.status(500).json({ message: 'Server configuration error' });
       }
 
       // Sign in with Firebase Auth REST API
@@ -74,7 +78,7 @@ export const login = async (req: Request, res: Response) => {
       );
 
       if (!signInResponse.data || !signInResponse.data.localId) {
-        return res.status(401).json({ message: 'Invalid credentials' });
+        return res.status(401).json({ message: 'Email veya şifre hatalı' });
       }
 
       // Get user details
@@ -95,11 +99,14 @@ export const login = async (req: Request, res: Response) => {
     } catch (error) {
       // Firebase Authentication error
       console.error('Auth error:', error);
-      return res.status(401).json({ message: 'Invalid credentials' });
+      if (axios.isAxiosError(error) && error.response?.status === 400) {
+        return res.status(401).json({ message: 'Email veya şifre hatalı' });
+      }
+      return res.status(401).json({ message: 'Giriş başarısız' });
     }
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Sunucu hatası' });
   }
 };
 
