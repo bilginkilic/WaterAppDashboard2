@@ -1,0 +1,23 @@
+import express, { Request, Response } from 'express';
+import { body } from 'express-validator';
+import { adminLogin, getLeaderboards } from '../controllers/admin.controller';
+import { verifyAdminToken } from '../middleware/admin.middleware';
+
+const router = express.Router();
+
+// Admin login route
+router.post('/login', [
+  body('username').notEmpty().withMessage('Username is required'),
+  body('password').notEmpty().withMessage('Password is required')
+], (req: Request, res: Response) => {
+  void adminLogin(req, res);
+});
+
+// Protected admin routes
+router.get('/leaderboards', (req: Request, res: Response, next) => {
+  void verifyAdminToken(req, res, next);
+}, (req: Request, res: Response) => {
+  void getLeaderboards(req, res);
+});
+
+export default router; 
