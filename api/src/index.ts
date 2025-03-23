@@ -1,4 +1,3 @@
-import * as functions from 'firebase-functions';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -9,10 +8,13 @@ import waterprintRoutes from './routes/waterprint.routes';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['https://waterappdaily.netlify.app', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Routes
@@ -27,7 +29,4 @@ app.get('/api/health', (req, res) => {
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
-});
-
-// Export the Express app as a Firebase Function
-export const api = functions.https.onRequest(app); 
+}); 
