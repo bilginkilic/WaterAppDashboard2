@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
-import { adminLogin, getLeaderboards } from '../controllers/admin.controller';
+import { adminLogin, getUserList, getLeaderboards } from '../controllers/admin.controller';
 import { verifyAdminToken } from '../middleware/admin.middleware';
 
 const router = express.Router();
@@ -14,9 +14,11 @@ router.post('/login', [
 });
 
 // Protected admin routes
-router.get('/leaderboards', (req: Request, res: Response, next) => {
-  void verifyAdminToken(req, res, next);
-}, (req: Request, res: Response) => {
+router.get('/users', verifyAdminToken, (req: Request, res: Response) => {
+  void getUserList(req, res);
+});
+
+router.get('/leaderboards', verifyAdminToken, (req: Request, res: Response) => {
   void getLeaderboards(req, res);
 });
 
