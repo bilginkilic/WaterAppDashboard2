@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { admin } from './config/firebase';
+import { Request, Response } from 'express';
 
 dotenv.config();
 
