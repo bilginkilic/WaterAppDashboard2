@@ -96,9 +96,9 @@ export const getLeaderboards = async (req: Request, res: Response) => {
     // Get all users from Firebase
     const userList = await firebaseAdmin.auth().listUsers();
     
-    // Get waterprint data
+    // Get waterprint data - Updated collection name
     const waterprintSnapshot = await firebaseAdmin.firestore()
-      .collection('waterprints')
+      .collection('WaterprintProfiles')
       .get();
 
     const waterprintData = new Map();
@@ -109,7 +109,9 @@ export const getLeaderboards = async (req: Request, res: Response) => {
         waterprintData.set(data.userId, {
           initialWaterprint: data.initialWaterprint || 0,
           currentWaterprint: data.currentWaterprint || 0,
-          tasksCompleted: data.tasksCompleted || 0
+          tasksCompleted: (data.completedTasks || []).length,
+          startDate: data.initialAssessment?.date || null,
+          correctAnswers: data.initialAssessment?.correctAnswersCount || 0
         });
       }
     });
@@ -128,7 +130,7 @@ export const getLeaderboards = async (req: Request, res: Response) => {
       .map(user => ({
         name: user.displayName || user.email || 'Unknown User',
         initialWaterprint: waterprintData.get(user.uid).initialWaterprint,
-        correctAnswers: Math.floor(Math.random() * 15) + 5  // Placeholder data
+        correctAnswers: waterprintData.get(user.uid).correctAnswers
       }))
       .sort((a, b) => a.initialWaterprint - b.initialWaterprint)
       .slice(0, 5);
@@ -148,7 +150,7 @@ export const getLeaderboards = async (req: Request, res: Response) => {
           improvement: improvementPercent.toFixed(2),
           initialWaterprint: data.initialWaterprint,
           currentWaterprint: data.currentWaterprint,
-          tasksCompleted: data.tasksCompleted || Math.floor(Math.random() * 10) + 1
+          tasksCompleted: data.tasksCompleted
         };
       })
       .sort((a, b) => parseFloat(b.improvement) - parseFloat(a.improvement))
@@ -156,10 +158,7 @@ export const getLeaderboards = async (req: Request, res: Response) => {
 
     // Calculate statistics
     const totalUsers = userList.users.length;
-    const totalTasks = userList.users.reduce((acc, user) => {
-      const data = waterprintData.get(user.uid);
-      return acc + (data?.tasksCompleted || 0);
-    }, 0);
+    const totalTasks = Array.from(waterprintData.values()).reduce((acc, data) => acc + data.tasksCompleted, 0);
 
     // Average improvement calculation
     let totalImprovement = 0;
