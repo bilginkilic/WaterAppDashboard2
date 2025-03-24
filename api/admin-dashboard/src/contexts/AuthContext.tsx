@@ -4,7 +4,7 @@ import axios from 'axios';
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
-  login: (username: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -19,28 +19,31 @@ export const useAuth = () => useContext(AuthContext);
 
 interface LoginResponse {
   token: string;
+  userId: string;
+  name?: string;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));
   const isAuthenticated = Boolean(token);
 
-  const login = useCallback(async (username: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     try {
       const apiUrl = process.env.NODE_ENV === 'production' 
         ? process.env.REACT_APP_PRODUCTION_API_URL 
         : process.env.REACT_APP_API_URL;
         
       const response = await axios.post<LoginResponse>(`${apiUrl}/api/admin/login`, {
-        username,
-        password,
+        email,
+        password
       });
 
       const { token } = response.data;
       localStorage.setItem('adminToken', token);
       setToken(token);
     } catch (error) {
-      throw new Error('Login failed');
+      console.error('Login error:', error);
+      throw new Error('Giriş başarısız. Lütfen e-posta ve şifrenizi kontrol edin.');
     }
   }, []);
 

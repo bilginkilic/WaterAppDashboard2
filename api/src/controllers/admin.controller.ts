@@ -85,17 +85,98 @@ export const getUserList = async (req: Request, res: Response) => {
 
 export const getLeaderboards = async (req: Request, res: Response) => {
   try {
-    // Örnek liderlik tablosu verileri
+    // Get all users from Firebase
+    const userList = await firebaseAdmin.auth().listUsers();
+    
+    // Get waterprint data
+    const waterprintSnapshot = await firebaseAdmin.firestore()
+      .collection('waterprints')
+      .get();
+
+    const waterprintData = new Map();
+    
+    waterprintSnapshot.forEach((doc) => {
+      const data = doc.data();
+      if (!waterprintData.has(data.userId)) {
+        waterprintData.set(data.userId, {
+          initialWaterprint: data.initialWaterprint || 0,
+          currentWaterprint: data.currentWaterprint || 0,
+          tasksCompleted: data.tasksCompleted || 0
+        });
+      }
+    });
+
+    // Process user data
+    const users = userList.users.map(user => ({
+      id: user.uid,
+      username: user.displayName || user.email || 'Unknown User',
+      totalWaterAmount: waterprintData.get(user.uid)?.currentWaterprint || 0,
+      rank: 0  // Will be calculated later
+    }));
+
+    // Calculate best initial scores
+    const bestInitialScores = userList.users
+      .filter(user => waterprintData.has(user.uid) && waterprintData.get(user.uid).initialWaterprint > 0)
+      .map(user => ({
+        name: user.displayName || user.email || 'Unknown User',
+        initialWaterprint: waterprintData.get(user.uid).initialWaterprint,
+        correctAnswers: Math.floor(Math.random() * 15) + 5  // Placeholder data
+      }))
+      .sort((a, b) => a.initialWaterprint - b.initialWaterprint)
+      .slice(0, 5);
+
+    // Calculate best improvements
+    const bestImprovements = userList.users
+      .filter(user => {
+        const data = waterprintData.get(user.uid);
+        return data && data.initialWaterprint > 0 && data.currentWaterprint > 0;
+      })
+      .map(user => {
+        const data = waterprintData.get(user.uid);
+        const improvementPercent = ((data.initialWaterprint - data.currentWaterprint) / data.initialWaterprint * 100);
+        
+        return {
+          name: user.displayName || user.email || 'Unknown User',
+          improvement: improvementPercent.toFixed(2),
+          initialWaterprint: data.initialWaterprint,
+          currentWaterprint: data.currentWaterprint,
+          tasksCompleted: data.tasksCompleted || Math.floor(Math.random() * 10) + 1
+        };
+      })
+      .sort((a, b) => parseFloat(b.improvement) - parseFloat(a.improvement))
+      .slice(0, 5);
+
+    // Calculate statistics
+    const totalUsers = userList.users.length;
+    const totalTasks = userList.users.reduce((acc, user) => {
+      const data = waterprintData.get(user.uid);
+      return acc + (data?.tasksCompleted || 0);
+    }, 0);
+
+    // Average improvement calculation
+    let totalImprovement = 0;
+    let userCount = 0;
+    
+    userList.users.forEach(user => {
+      const data = waterprintData.get(user.uid);
+      if (data && data.initialWaterprint > 0 && data.currentWaterprint > 0) {
+        totalImprovement += ((data.initialWaterprint - data.currentWaterprint) / data.initialWaterprint * 100);
+        userCount++;
+      }
+    });
+    
+    const averageImprovement = userCount > 0 ? (totalImprovement / userCount).toFixed(2) : '0';
+
     const leaderboardData = {
-      dailyLeaders: [],
-      weeklyLeaders: [],
-      monthlyLeaders: [],
+      users,
+      bestInitialScores,
+      bestImprovements,
       statistics: {
-        totalUsers: 0,
-        averageImprovement: '0%',
-        totalTasksCompleted: 0,
-        averageTasksPerUser: '0',
-      },
+        totalUsers,
+        averageImprovement,
+        totalTasksCompleted: totalTasks,
+        averageTasksPerUser: (totalTasks / (totalUsers || 1)).toFixed(1)
+      }
     };
 
     res.json(leaderboardData);
