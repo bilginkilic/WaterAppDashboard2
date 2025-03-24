@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 interface AdminTokenPayload {
-  username: string;
+  email: string;
   isAdmin: boolean;
 }
 
@@ -16,7 +16,7 @@ export const verifyAdminToken = (req: Request, res: Response, next: NextFunction
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as AdminTokenPayload;
     
-    if (!decoded.isAdmin) {
+    if (!decoded.isAdmin || decoded.email !== (process.env.ADMIN_EMAIL || 'admin@waterapp.com')) {
       return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
     }
 

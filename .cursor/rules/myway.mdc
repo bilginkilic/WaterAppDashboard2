@@ -10,3 +10,5 @@ alwaysApply: true
 - bu sayfadan apiden gelen bilgilerle kullanıcı listsesi ve en iyi iki kullanıcı tespit edilecek. en az su tüketen ve en iyi gelişim kaydeden. yani kısa zamanda su ayak izini en çok düşüren kişi.
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@waterapp.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+Admin login işlemi!
+https://waterappdaily.netlify.app/login admincontextten almalı basit bir if else kontrolü olmalı.

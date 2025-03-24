@@ -11,9 +11,21 @@ const app = express();
 
 // CORS configuration
 app.use(cors({
-  origin: ['http://localhost:3002', 'http://localhost:3000', 'https://waterappdashboard2.onrender.com'],
-  credentials: true
+  origin: [
+    'http://localhost:3002',
+    'http://localhost:3000',
+    'https://waterappdashboard2.onrender.com',
+    'https://waterappdaily.netlify.app'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 600 // 10 minutes
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 app.use(express.json());
 

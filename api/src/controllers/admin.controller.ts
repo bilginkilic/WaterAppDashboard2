@@ -29,8 +29,16 @@ export const adminLogin = async (req: Request, res: Response) => {
     return res.status(401).json({ message: 'Geçersiz email veya şifre' });
   }
 
-  const token = jwt.sign({ email, role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
-  res.json({ token });
+  const token = jwt.sign(
+    { email, isAdmin: true },
+    JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+
+  res.json({
+    token,
+    message: 'Admin girişi başarılı'
+  });
 };
 
 export const getUserList = async (req: Request, res: Response) => {
