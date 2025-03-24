@@ -71,8 +71,8 @@ export default function UserList() {
           throw new Error('Kullanıcı listesi alınamadı');
         }
         const data: ApiResponse = await response.json();
-        setUsers(data.users);
-        setStats(data.stats);
+        setUsers(data.users || []);
+        setStats(data.stats || null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Bir hata oluştu');
       } finally {
@@ -105,6 +105,16 @@ export default function UserList() {
     );
   }
 
+  if (!stats || !users.length) {
+    return (
+      <Card className="bg-white/95 shadow-xl border border-blue-100">
+        <CardContent className="pt-6">
+          <div className="text-gray-500 text-center">Henüz veri bulunmamaktadır.</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Overview Stats */}
@@ -115,10 +125,10 @@ export default function UserList() {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-900">{stats?.total.userCount}</div>
+            <div className="text-2xl font-bold text-gray-900">{stats.total.userCount}</div>
             <div className="text-sm text-gray-600 flex items-center gap-1">
               <Users className="h-3 w-3" />
-              {stats?.total.activeUserCount} aktif kullanıcı
+              {stats.total.activeUserCount} aktif kullanıcı
             </div>
           </CardContent>
         </Card>
@@ -130,7 +140,7 @@ export default function UserList() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              {stats?.total.initialTotal?.toLocaleString('tr-TR')} lt/gün
+              {stats.total.initialTotal?.toLocaleString('tr-TR')} lt/gün
             </div>
             <div className="text-sm text-gray-600">
               Toplam başlangıç su ayak izi
@@ -145,7 +155,7 @@ export default function UserList() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              {stats?.total.currentTotal?.toLocaleString('tr-TR')} lt/gün
+              {stats.total.currentTotal?.toLocaleString('tr-TR')} lt/gün
             </div>
             <div className="text-sm text-gray-600">
               Toplam güncel su ayak izi
@@ -160,7 +170,7 @@ export default function UserList() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">
-              {stats?.total && stats.total.initialTotal && stats.total.currentTotal
+              {stats.total.initialTotal && stats.total.currentTotal
                 ? `%${((stats.total.initialTotal - stats.total.currentTotal) / stats.total.initialTotal * 100).toFixed(2)}`
                 : '-'
               }
@@ -183,7 +193,7 @@ export default function UserList() {
         <CardContent>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats?.dailyData}>
+              <AreaChart data={stats.dailyData || []}>
                 <defs>
                   <linearGradient id="totalWaterprint" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#2563eb" stopOpacity={0.3}/>
@@ -252,7 +262,7 @@ export default function UserList() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {stats?.topImprovement.map((user, index) => (
+              {(stats.topImprovement || []).map((user, index) => (
                 <div key={user.id} 
                   className="flex items-center justify-between p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors">
                   <div className="flex items-center space-x-3">
@@ -285,7 +295,7 @@ export default function UserList() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {stats?.bestInitial.map((user, index) => (
+              {(stats.bestInitial || []).map((user, index) => (
                 <div key={user.id} 
                   className="flex items-center justify-between p-3 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors">
                   <div className="flex items-center space-x-3">
