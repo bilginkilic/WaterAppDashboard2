@@ -1,8 +1,34 @@
 {
+  "name": "water-app-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
-    "@types/react": "^19.0.12",
+    "@radix-ui/react-slot": "^1.1.2",
+    "@tremor/react": "^3.18.7",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
     "clsx": "^2.1.1",
-    "firebase-admin": "^13.2.0",
-    "tailwind-merge": "^3.0.2"
+    "date-fns": "^3.6.0",
+    "firebase-admin": "^12.7.0",
+    "lucide-react": "^0.483.0",
+    "next": "14.1.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "recharts": "^2.15.1",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.0.0"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^4.0.15"
   }
 }
