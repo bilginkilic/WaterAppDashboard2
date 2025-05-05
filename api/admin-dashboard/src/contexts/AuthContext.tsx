@@ -8,6 +8,11 @@ interface AuthContextType {
   logout: () => void;
 }
 
+interface LoginResponse {
+  token: string;
+  message: string;
+}
+
 const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   token: null,
@@ -17,25 +22,19 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
-interface LoginResponse {
-  token: string;
-  userId: string;
-  name?: string;
-}
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('adminToken'));
   const isAuthenticated = Boolean(token);
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const apiUrl = process.env.NODE_ENV === 'production' 
-        ? process.env.REACT_APP_PRODUCTION_API_URL 
-        : process.env.REACT_APP_API_URL;
-        
-      const response = await axios.post<LoginResponse>(`${apiUrl}/api/admin/login`, {
+      const response = await axios.post<LoginResponse>('https://waterappdashboard2.onrender.com/api/admin/login', {
         email,
         password
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
       const { token } = response.data;
