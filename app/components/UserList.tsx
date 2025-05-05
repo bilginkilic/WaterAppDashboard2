@@ -15,12 +15,17 @@ import { format } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { TrendingUp, Users, Droplet, Award, Calendar } from 'lucide-react';
 
+interface DailyUsage {
+  date: string;
+  waterprint: number;
+}
+
 interface Waterprint {
   initial: number | null;
   current: number | null;
   startDate: string | null;
   improvement: string | null;
-  dailyUsage: Array<{ date: string; value: number }>;
+  dailyUsage: DailyUsage[];
 }
 
 interface User {
@@ -66,13 +71,119 @@ export default function UserList() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // First get all users from Firebase Auth
         const response = await fetch('/api/admin/users');
         if (!response.ok) {
           throw new Error('Kullanıcı listesi alınamadı');
         }
-        const data: ApiResponse = await response.json();
-        setUsers(data.users || []);
-        setStats(data.stats || null);
+        const userData: { users: User[] } = await response.json();
+
+        // Then fetch waterprint data for each user
+        const usersWithData = await Promise.all(
+          userData.users.map(async (user) => {
+            try {
+              const progressResponse = await fetch(`https://waterappdashboard2.onrender.com/api/waterprint/progress/${user.id}`, {
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              
+              if (!progressResponse.ok) {
+                return {
+                  ...user,
+                  waterprint: {
+                    initial: null,
+                    current: null,
+                    startDate: null,
+                    improvement: null,
+                    dailyUsage: []
+                  }
+                };
+              }
+
+              const progressData = await progressResponse.json();
+              
+              return {
+                ...user,
+                waterprint: {
+                  initial: progressData.initialWaterprint,
+                  current: progressData.currentWaterprint,
+                  startDate: progressData.startDate,
+                  dailyUsage: progressData.progressHistory || [],
+                  improvement: progressData.initialWaterprint && progressData.currentWaterprint
+                    ? ((progressData.initialWaterprint - progressData.currentWaterprint) / progressData.initialWaterprint * 100).toFixed(2)
+                    : null
+                }
+              };
+            } catch (err) {
+              console.error(`Error fetching progress for user ${user.id}:`, err);
+              return {
+                ...user,
+                waterprint: {
+                  initial: null,
+                  current: null,
+                  startDate: null,
+                  improvement: null,
+                  dailyUsage: []
+                }
+              };
+            }
+          })
+        );
+
+        // Calculate statistics
+        const totalStats = {
+          initialTotal: usersWithData.reduce((sum, user) => sum + (user.waterprint.initial || 0), 0),
+          currentTotal: usersWithData.reduce((sum, user) => sum + (user.waterprint.current || 0), 0),
+          userCount: usersWithData.length,
+          activeUserCount: usersWithData.filter(user => user.waterprint.current !== null).length
+        };
+
+        // Sort users by improvement
+        const sortedByImprovement = [...usersWithData]
+          .filter(user => user.waterprint.improvement !== null)
+          .sort((a, b) => Number(b.waterprint.improvement) - Number(a.waterprint.improvement));
+
+        // Sort users by initial waterprint
+        const sortedByInitial = [...usersWithData]
+          .filter(user => user.waterprint.initial !== null)
+          .sort((a, b) => Number(a.waterprint.initial) - Number(b.waterprint.initial));
+
+        // Prepare daily data for charts
+        const dailyData = new Map();
+        usersWithData.forEach(user => {
+          user.waterprint.dailyUsage.forEach((usage: DailyUsage) => {
+            const date = new Date(usage.date).toISOString().split('T')[0];
+            const current = dailyData.get(date) || { totalWaterprint: 0, userCount: 0 };
+            dailyData.set(date, {
+              totalWaterprint: current.totalWaterprint + usage.waterprint,
+              userCount: current.userCount + 1
+            });
+          });
+        });
+
+        const last30Days = Array.from({ length: 30 }, (_, i) => {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          return date.toISOString().split('T')[0];
+        }).reverse();
+
+        const dailyChartData = last30Days.map(date => ({
+          date,
+          totalWaterprint: dailyData.get(date)?.totalWaterprint || 0,
+          averageWaterprint: dailyData.get(date)?.userCount > 0 
+            ? dailyData.get(date).totalWaterprint / dailyData.get(date).userCount 
+            : 0
+        }));
+
+        setUsers(usersWithData);
+        setStats({
+          topImprovement: sortedByImprovement.slice(0, 3),
+          bestInitial: sortedByInitial.slice(0, 3),
+          total: totalStats,
+          dailyData: dailyChartData
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Bir hata oluştu');
       } finally {
