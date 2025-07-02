@@ -69,4 +69,5 @@ next-env.d.ts
 
 # Firebase
 **/firebase-adminsdk*.json
-firebase-service-account.json 
+firebase-service-account.json
+firebase-service-account-new.json 

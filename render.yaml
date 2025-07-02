@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: waterapp-api
+    env: node
+    plan: free
+    buildCommand: cd api && npm install && npm run build
+    startCommand: cd api && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@waterapp.com
+      - key: ADMIN_PASSWORD
+        value: admin123 

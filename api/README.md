@@ -26,7 +26,17 @@ This is the backend API for the WaterApp application, providing authentication a
 3. Set up environment variables:
    - Copy `.env.example` to `.env`
    - Fill in your environment variables
-   - Place your Firebase service account JSON file in the root directory as `firebase-service-account.json` or set it as an environment variable
+   - Place your Firebase service account JSON file in the root directory as `firebase-service-account-new.json` or set it as an environment variable
+   
+   **Environment Variables:**
+   ```bash
+   # Firebase Service Account (JSON string)
+   FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
+   
+   # Admin credentials
+   ADMIN_EMAIL=admin@waterapp.com
+   ADMIN_PASSWORD=admin123
+   ```
 
 4. Build the project:
    ```bash
