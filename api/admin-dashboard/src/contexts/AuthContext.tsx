@@ -39,11 +39,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       console.log('Login response:', response.data);
-      const { token } = response.data;
+      const { token, userId, name } = response.data;
       if (!token) {
         throw new Error('Token not found in response');
       }
+      console.log('User info:', { userId, name });
       localStorage.setItem('adminToken', token);
+      localStorage.setItem('userEmail', name || ''); // name field contains email in Firebase response
       setToken(token);
     } catch (error) {
       console.error('Login error:', error);

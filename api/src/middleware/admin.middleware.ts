@@ -13,9 +13,24 @@ export const verifyAdminToken = async (req: Request, res: Response, next: NextFu
     const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
     console.log('Decoded token:', decodedToken);
     
+    console.log('Token email:', decodedToken.email);
+    console.log('Token claims:', decodedToken);
+    
+    if (!decodedToken.email) {
+      console.log('No email in token');
+      return res.status(403).json({ 
+        message: 'Access denied. No email in token.',
+        token: decodedToken 
+      });
+    }
+
     if (decodedToken.email !== 'admin@waterapp.com') {
       console.log('Access denied. User email:', decodedToken.email);
-      return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+      return res.status(403).json({ 
+        message: 'Access denied. Admin privileges required.',
+        userEmail: decodedToken.email,
+        expectedEmail: 'admin@waterapp.com'
+      });
     }
 
     console.log('Admin access granted for:', decodedToken.email);
