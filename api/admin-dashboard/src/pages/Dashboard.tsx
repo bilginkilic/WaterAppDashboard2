@@ -111,7 +111,18 @@ const Dashboard: React.FC = () => {
         setData(response.data);
       } catch (error: any) {
         console.error('Error fetching data:', error);
-        setError(error.response?.data?.message || 'Veri yüklenirken bir hata oluştu');
+        const errorData = error.response?.data;
+        console.log('Error data:', errorData);
+        let errorMessage = errorData?.message || 'Veri yüklenirken bir hata oluştu';
+        
+        if (errorData?.userEmail) {
+          errorMessage += `\nKullanıcı: ${errorData.userEmail}`;
+        }
+        if (errorData?.expectedEmail) {
+          errorMessage += `\nBeklenen: ${errorData.expectedEmail}`;
+        }
+        
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
