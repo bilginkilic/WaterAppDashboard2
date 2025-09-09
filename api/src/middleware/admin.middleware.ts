@@ -14,9 +14,9 @@ export const verifyAdminToken = (req: Request, res: Response, next: NextFunction
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as AdminTokenPayload;
+    const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
     
-    if (!decoded.isAdmin || decoded.email !== (process.env.ADMIN_EMAIL || 'admin@waterapp.com')) {
+    if (decodedToken.email !== 'admin@waterapp.com') {
       return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
     }
 
