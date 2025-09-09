@@ -59,8 +59,12 @@ const GridAnimation: React.FC = () => {
     const interval = setInterval(() => {
       cells.forEach((cell) => {
         const delay = Math.random() * 2;
+        // Force reflow için fonksiyon
+        const forceReflow = () => {
+          return cell.offsetHeight;
+        };
         cell.style.animation = 'none';
-        cell.offsetHeight; // Reflow
+        forceReflow();
         cell.style.animation = `${fadeIn} 0.5s ease-out forwards ${delay}s`;
       });
     }, 3000);
