@@ -66,9 +66,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const apiUrl = process.env.NODE_ENV === 'production' 
-          ? process.env.REACT_APP_PRODUCTION_API_URL 
-          : process.env.REACT_APP_API_URL;
+        const apiUrl = 'https://waterappdashboard2.onrender.com';
 
         const response = await axios.get<LeaderboardData>(`${apiUrl}/api/admin/leaderboards`, {
           headers: { Authorization: `Bearer ${token}` },

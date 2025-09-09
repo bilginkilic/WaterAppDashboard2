@@ -14,9 +14,7 @@ router.post('/login', [
 });
 
 // Protected admin routes
-router.get('/leaderboards', (req: Request, res: Response, next) => {
-  void verifyAdminToken(req, res, next);
-}, (req: Request, res: Response) => {
+router.get('/leaderboards', verifyAdminToken, (req: Request, res: Response) => {
   void getLeaderboards(req, res);
 });
 
