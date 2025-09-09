@@ -1,9 +1,13 @@
 [build]
   base = "api/admin-dashboard"
   publish = "build"
-  command = "npm run build"
+  command = "CI=false npm run build"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200 
+
+[build.environment]
+  REACT_APP_API_URL = "https://waterappdashboard2.onrender.com"
+  REACT_APP_PRODUCTION_API_URL = "https://waterappdashboard2.onrender.com"
