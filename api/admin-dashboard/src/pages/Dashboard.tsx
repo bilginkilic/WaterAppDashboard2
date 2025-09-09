@@ -16,7 +16,12 @@ import {
   AppBar,
   Toolbar,
   Button,
+  Fade,
+  LinearProgress,
+  Skeleton,
+  CircularProgress,
 } from '@mui/material';
+import { styled, keyframes } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
@@ -58,22 +63,59 @@ interface LeaderboardData {
   };
 }
 
+// Animasyonlu loading efekti için styled components
+const pulse = keyframes`
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
+`;
+
+const LoadingBox = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: '100vh',
+  gap: theme.spacing(3),
+  animation: `${pulse} 1.5s ease-in-out infinite`,
+}));
+
+const LoadingCard = styled(Card)(({ theme }) => ({
+  padding: theme.spacing(3),
+  textAlign: 'center',
+  maxWidth: 400,
+  width: '100%',
+}));
+
 const Dashboard: React.FC = () => {
   const [data, setData] = useState<LeaderboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { token, logout } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const apiUrl = 'https://waterappdashboard2.onrender.com';
 
         const response = await axios.get<LeaderboardData>(`${apiUrl}/api/admin/leaderboards`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setData(response.data);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching data:', error);
+        setError(error.response?.data?.message || 'Veri yüklenirken bir hata oluştu');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -87,8 +129,56 @@ const Dashboard: React.FC = () => {
     navigate('/login');
   };
 
+  if (loading) {
+    return (
+      <LoadingBox>
+        <LoadingCard>
+          <CircularProgress size={60} thickness={4} sx={{ mb: 3 }} />
+          <Typography variant="h6" gutterBottom>
+            Veriler Yükleniyor
+          </Typography>
+          <LinearProgress sx={{ mt: 2, mb: 1 }} />
+          <Typography variant="body2" color="textSecondary">
+            Lütfen bekleyin...
+          </Typography>
+        </LoadingCard>
+      </LoadingBox>
+    );
+  }
+
+  if (error) {
+    return (
+      <LoadingBox>
+        <LoadingCard>
+          <Typography variant="h6" color="error" gutterBottom>
+            Hata
+          </Typography>
+          <Typography variant="body1" color="error">
+            {error}
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={() => window.location.reload()} 
+            sx={{ mt: 3 }}
+          >
+            Yeniden Dene
+          </Button>
+        </LoadingCard>
+      </LoadingBox>
+    );
+  }
+
   if (!data) {
-    return <Typography>Loading...</Typography>;
+    return (
+      <LoadingBox>
+        <LoadingCard>
+          <Typography variant="h6" color="error">
+            Veri bulunamadı
+          </Typography>
+        </LoadingCard>
+      </LoadingBox>
+    );
   }
 
   return (

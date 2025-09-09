@@ -38,7 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
+      console.log('Login response:', response.data);
       const { token } = response.data;
+      if (!token) {
+        throw new Error('Token not found in response');
+      }
       localStorage.setItem('adminToken', token);
       setToken(token);
     } catch (error) {
