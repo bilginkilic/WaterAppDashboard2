@@ -9,8 +9,9 @@ interface AuthContextType {
 }
 
 interface LoginResponse {
+  userId: string;
   token: string;
-  message: string;
+  name?: string;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const response = await axios.post<LoginResponse>('https://waterappdashboard2.onrender.com/api/admin/login', {
+      const response = await axios.post<LoginResponse>('https://waterappdashboard2.onrender.com/api/auth/login', {
         email,
         password
       }, {
