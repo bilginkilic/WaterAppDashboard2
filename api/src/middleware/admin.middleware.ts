@@ -1,12 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import { firebaseAdmin } from '../config/firebase';
 
-interface AdminTokenPayload {
-  email: string;
-  isAdmin: boolean;
-}
-
-export const verifyAdminToken = (req: Request, res: Response, next: NextFunction) => {
+export const verifyAdminToken = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
@@ -20,9 +15,10 @@ export const verifyAdminToken = (req: Request, res: Response, next: NextFunction
       return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
     }
 
-    req.body.admin = decoded;
+    req.body.admin = decodedToken;
     next();
   } catch (error) {
+    console.error('Token verification error:', error);
     res.status(400).json({ message: 'Invalid token.' });
   }
 }; 
