@@ -25,20 +25,30 @@ export const adminLogin = async (req: Request, res: Response) => {
 
   const { email, password } = req.body;
 
-  if (email !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
+  try {
+    // Firebase ile kullanıcıyı doğrula
+    const userRecord = await firebaseAdmin.auth().getUserByEmail(email);
+    
+    // Admin kontrolü
+    if (email !== ADMIN_EMAIL) {
+      return res.status(401).json({ message: 'Admin yetkisi gerekli' });
+    }
+
+    // Firebase token oluştur
+    const customToken = await firebaseAdmin.auth().createCustomToken(userRecord.uid, {
+      admin: true
+    });
+
+    res.json({
+      token: customToken,
+      userId: userRecord.uid,
+      name: userRecord.email,
+      message: 'Admin girişi başarılı'
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
     return res.status(401).json({ message: 'Geçersiz email veya şifre' });
   }
-
-  const token = jwt.sign(
-    { email, isAdmin: true },
-    JWT_SECRET,
-    { expiresIn: '24h' }
-  );
-
-  res.json({
-    token,
-    message: 'Admin girişi başarılı'
-  });
 };
 
 export const getUserList = async (req: Request, res: Response) => {
