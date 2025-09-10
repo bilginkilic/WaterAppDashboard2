@@ -17,34 +17,30 @@ export const verifyAdminToken = async (req: Request, res: Response, next: NextFu
   try {
     console.log('Verifying token:', token);
     
-    // JWT token'ı decode et
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as JwtPayload;
-    console.log('Decoded JWT:', decoded);
+    // Firebase token'ı doğrula
+    const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
+    console.log('Decoded token:', decodedToken);
 
-    if (!decoded.userId) {
-      return res.status(403).json({ message: 'Invalid token format' });
-    }
-
-    // Firebase'den kullanıcı bilgilerini al
-    const userRecord = await firebaseAdmin.auth().getUser(decoded.userId);
-    console.log('Firebase user:', userRecord);
-
-    if (!userRecord.email) {
-      return res.status(403).json({ 
-        message: 'Access denied. No email associated with user.',
-      });
-    }
-
-    if (userRecord.email !== 'admin@waterapp.com') {
+    // Admin kontrolü
+    if (!decodedToken.email || decodedToken.email !== 'admin@waterapp.com') {
+      console.log('Access denied. User email:', decodedToken.email);
       return res.status(403).json({ 
         message: 'Access denied. Admin privileges required.',
-        userEmail: userRecord.email,
+        userEmail: decodedToken.email,
         expectedEmail: 'admin@waterapp.com'
       });
     }
 
-    console.log('Admin access granted for:', userRecord.email);
-    req.body.admin = userRecord;
+    // Admin claim kontrolü
+    if (!decodedToken.admin) {
+      console.log('Access denied. No admin claim');
+      return res.status(403).json({ 
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+
+    console.log('Admin access granted for:', decodedToken.email);
+    req.body.admin = decodedToken;
     next();
   } catch (error) {
     console.error('Token verification error:', error);

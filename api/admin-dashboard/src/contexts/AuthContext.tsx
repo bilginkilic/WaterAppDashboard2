@@ -30,10 +30,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = useCallback(async (email: string, password: string) => {
     try {
       // Firebase Authentication ile giriş yap
-      const response = await axios.post<LoginResponse>('https://waterappdashboard2.onrender.com/api/auth/login', {
+      const response = await axios.post<LoginResponse>('https://waterappdashboard2.onrender.com/api/admin/login', {
         email,
-        password,
-        returnSecureToken: true
+        password
       }, {
         headers: {
           'Content-Type': 'application/json'
