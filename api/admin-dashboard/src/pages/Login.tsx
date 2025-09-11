@@ -9,47 +9,48 @@ import {
   Paper,
   Alert,
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { styled, keyframes } from '@mui/material/styles';
 import { useAuth } from '../contexts/AuthContext';
 import GridAnimation from '../components/GridAnimation';
 
-// Animasyonlu elementler için styled components
-const AnimatedContainer = styled(Container)(({ theme }) => ({
+const floatAnimation = keyframes`
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+`;
+
+const glowAnimation = keyframes`
+  0% {
+    box-shadow: 0 0 5px rgba(138, 43, 226, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(138, 43, 226, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(138, 43, 226, 0.2);
+  }
+`;
+
+const AnimatedContainer = styled(Container)({
   position: 'relative',
   minHeight: '100vh',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'linear-gradient(45deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.9) 100%)',
-    zIndex: -1,
-  }
-}));
+  zIndex: 1,
+});
 
-const GlassBox = styled(Box)(({ theme }) => ({
-  backdropFilter: 'blur(10px)',
-  backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  borderRadius: theme.spacing(2),
-  padding: theme.spacing(3),
-  position: 'relative',
-  overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.1) 100%)',
-    zIndex: 0,
-  }
-}));
+const GlassBox = styled(Box)({
+  width: '100%',
+  maxWidth: '400px',
+  animation: `${floatAnimation} 6s ease-in-out infinite`,
+});
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(4),
@@ -57,13 +58,20 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   backdropFilter: 'blur(10px)',
   border: '1px solid rgba(255, 255, 255, 0.2)',
   borderRadius: theme.spacing(2),
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
   position: 'relative',
   overflow: 'hidden',
-  transition: 'transform 0.3s ease-in-out',
-  '&:hover': {
-    transform: 'translateY(-5px)',
-  }
+  animation: `${glowAnimation} 4s ease-in-out infinite`,
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(148, 0, 211, 0.2) 100%)',
+    opacity: 0.5,
+    zIndex: -1,
+  },
 }));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -74,33 +82,34 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
       borderColor: 'rgba(255, 255, 255, 0.2)',
     },
     '&:hover fieldset': {
-      borderColor: 'rgba(255, 255, 255, 0.3)',
+      borderColor: 'rgba(138, 43, 226, 0.5)',
     },
     '&.Mui-focused fieldset': {
-      borderColor: theme.palette.primary.main,
-    }
+      borderColor: 'rgba(138, 43, 226, 0.8)',
+    },
   },
   '& .MuiInputLabel-root': {
     color: 'rgba(255, 255, 255, 0.7)',
   },
   '& .MuiOutlinedInput-input': {
     color: 'white',
-  }
+  },
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
-  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+  background: 'linear-gradient(45deg, rgba(138, 43, 226, 0.8) 30%, rgba(148, 0, 211, 0.8) 90%)',
   border: 0,
-  borderRadius: 3,
-  boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+  borderRadius: theme.spacing(1),
+  boxShadow: '0 3px 5px 2px rgba(138, 43, 226, 0.3)',
   color: 'white',
   height: 48,
   padding: '0 30px',
-  transition: 'transform 0.3s ease',
+  transition: 'all 0.3s ease',
   '&:hover': {
-    background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+    background: 'linear-gradient(45deg, rgba(138, 43, 226, 1) 30%, rgba(148, 0, 211, 1) 90%)',
     transform: 'scale(1.02)',
-  }
+    boxShadow: '0 5px 15px 2px rgba(138, 43, 226, 0.4)',
+  },
 }));
 
 const Login: React.FC = () => {
@@ -126,7 +135,7 @@ const Login: React.FC = () => {
       <AnimatedContainer>
         <GlassBox>
           <StyledPaper elevation={3}>
-            <Typography
+              <Typography
               component="h1"
               variant="h4"
               sx={{
@@ -134,7 +143,8 @@ const Login: React.FC = () => {
                 fontWeight: 'bold',
                 color: 'white',
                 textAlign: 'center',
-                textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                textShadow: '0 2px 8px rgba(138, 43, 226, 0.3)',
+                letterSpacing: '1px',
               }}
             >
               WaterApp Admin

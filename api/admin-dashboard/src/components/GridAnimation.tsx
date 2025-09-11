@@ -2,12 +2,31 @@ import React, { useEffect, useRef } from 'react';
 import { styled, keyframes } from '@mui/material/styles';
 import { Box } from '@mui/material';
 
-const fadeIn = keyframes`
-  from {
-    opacity: 0;
-    transform: scale(0.9);
+const pulse = keyframes`
+  0% {
+    transform: scale(1);
+    opacity: 0.3;
   }
-  to {
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+`;
+
+const fadeInScale = keyframes`
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -20,20 +39,42 @@ const Container = styled(Box)({
   right: 0,
   bottom: 0,
   display: 'grid',
-  gridTemplateColumns: 'repeat(10, 1fr)',
-  gridTemplateRows: 'repeat(10, 1fr)',
-  gap: '2px',
-  padding: '2px',
+  gridTemplateColumns: 'repeat(20, 1fr)', // More squares for a denser grid
+  gridTemplateRows: 'repeat(20, 1fr)',
+  gap: '1px',
+  padding: '1px',
   pointerEvents: 'none',
   zIndex: 0,
+  background: 'linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(33,33,33,0.9) 100%)',
 });
 
-const GridCell = styled(Box)({
-  backgroundColor: 'rgba(128, 0, 255, 0.1)',
-  borderRadius: '4px',
-  animation: `${fadeIn} 0.5s ease-out forwards`,
-  opacity: 0,
-});
+const GridCell = styled(Box)(({ theme }) => ({
+  position: 'relative',
+  backgroundColor: 'rgba(138, 43, 226, 0.2)', // Base purple color
+  borderRadius: '2px',
+  transition: 'background-color 0.3s ease',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(148, 0, 211, 0.2) 100%)',
+    opacity: 0,
+    transition: 'opacity 0.3s ease',
+  },
+  '&.active': {
+    animation: `${pulse} 2s infinite ease-in-out`,
+    backgroundColor: 'rgba(138, 43, 226, 0.4)',
+    '&::before': {
+      opacity: 1,
+    },
+  },
+  '&.initial-fade': {
+    animation: `${fadeInScale} 0.5s forwards ease-out`,
+  },
+}));
 
 const GridAnimation: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,37 +85,47 @@ const GridAnimation: React.FC = () => {
 
     const cells = Array.from(container.children) as HTMLElement[];
     
-    // Rastgele sırayla hücreleri göster
+    // Initial fade-in animation
     cells.forEach((cell, index) => {
-      const delay = Math.random() * 2; // 0-2 saniye arası rastgele gecikme
+      const row = Math.floor(index / 20);
+      const col = index % 20;
+      const delay = (row + col) * 0.05; // Diagonal wave effect
       cell.style.animationDelay = `${delay}s`;
-      
-      // Rastgele renk tonu
-      const hue = Math.random() * 60 - 30; // -30 ile +30 arası
-      const lightness = Math.random() * 20 + 10; // 10-30 arası
-      cell.style.backgroundColor = `hsla(${270 + hue}, 70%, ${lightness}%, 0.15)`;
+      cell.classList.add('initial-fade');
     });
 
-    // Her 3 saniyede bir yeni animasyon
-    const interval = setInterval(() => {
-      cells.forEach((cell) => {
-        const delay = Math.random() * 2;
-        // Force reflow için fonksiyon
-        const forceReflow = () => {
-          return cell.offsetHeight;
-        };
-        cell.style.animation = 'none';
-        forceReflow();
-        cell.style.animation = `${fadeIn} 0.5s ease-out forwards ${delay}s`;
+    // Continuous wave animation
+    const animateWave = () => {
+      const time = Date.now();
+      cells.forEach((cell, index) => {
+        const row = Math.floor(index / 20);
+        const col = index % 20;
+        const distance = Math.sqrt(Math.pow(row - 10, 2) + Math.pow(col - 10, 2));
+        const wave = Math.sin(distance * 0.5 - time * 0.002) + 1;
+        
+        if (wave > 1.7) {
+          cell.classList.add('active');
+        } else {
+          cell.classList.remove('active');
+        }
+        
+        // Random sparkle effect
+        if (Math.random() < 0.001) {
+          cell.classList.add('active');
+          setTimeout(() => cell.classList.remove('active'), 2000);
+        }
       });
-    }, 3000);
+      
+      requestAnimationFrame(animateWave);
+    };
 
-    return () => clearInterval(interval);
+    const animation = requestAnimationFrame(animateWave);
+    return () => cancelAnimationFrame(animation);
   }, []);
 
   return (
     <Container ref={containerRef}>
-      {Array(100).fill(null).map((_, i) => (
+      {Array(400).fill(null).map((_, i) => (
         <GridCell key={i} />
       ))}
     </Container>
