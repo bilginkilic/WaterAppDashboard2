@@ -5,15 +5,18 @@ import { Box } from '@mui/material';
 const pulse = keyframes`
   0% {
     transform: scale(1);
-    opacity: 0.3;
+    opacity: 0.2;
+    box-shadow: 0 0 2px rgba(255, 255, 255, 0.2);
   }
   50% {
-    transform: scale(1.1);
-    opacity: 0.8;
+    transform: scale(1.2);
+    opacity: 0.9;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
   }
   100% {
     transform: scale(1);
-    opacity: 0.3;
+    opacity: 0.2;
+    box-shadow: 0 0 2px rgba(255, 255, 255, 0.2);
   }
 `;
 
@@ -50,9 +53,9 @@ const Container = styled(Box)({
 
 const GridCell = styled(Box)(({ theme }) => ({
   position: 'relative',
-  backgroundColor: 'rgba(138, 43, 226, 0.2)', // Base purple color
+  backgroundColor: 'rgba(255, 255, 255, 0.05)', // Beyaz taban rengi
   borderRadius: '2px',
-  transition: 'background-color 0.3s ease',
+  transition: 'all 0.3s ease',
   '&::before': {
     content: '""',
     position: 'absolute',
@@ -60,13 +63,14 @@ const GridCell = styled(Box)(({ theme }) => ({
     left: 0,
     right: 0,
     bottom: 0,
-    background: 'linear-gradient(135deg, rgba(138, 43, 226, 0.1) 0%, rgba(148, 0, 211, 0.2) 100%)',
+    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.2) 100%)',
     opacity: 0,
     transition: 'opacity 0.3s ease',
   },
   '&.active': {
     animation: `${pulse} 2s infinite ease-in-out`,
-    backgroundColor: 'rgba(138, 43, 226, 0.4)',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    boxShadow: '0 0 10px rgba(255, 255, 255, 0.3)',
     '&::before': {
       opacity: 1,
     },
@@ -94,25 +98,43 @@ const GridAnimation: React.FC = () => {
       cell.classList.add('initial-fade');
     });
 
-    // Continuous wave animation
+    // Continuous wave animation with focused areas
     const animateWave = () => {
       const time = Date.now();
       cells.forEach((cell, index) => {
         const row = Math.floor(index / 20);
         const col = index % 20;
+        
+        // Üst kısımda daha aktif bölge (header)
+        const topActive = row < 5 && Math.random() < 0.03;
+        
+        // Orta kısımda login formu etrafında aktif bölge
+        const centerRow = Math.abs(row - 10);
+        const centerCol = Math.abs(col - 10);
+        const centerActive = 
+          centerRow < 4 && 
+          centerCol < 4 && 
+          Math.random() < 0.02;
+        
+        // Alt kısımda daha aktif bölge (footer)
+        const bottomActive = row > 15 && Math.random() < 0.03;
+        
+        // Dalga efekti
         const distance = Math.sqrt(Math.pow(row - 10, 2) + Math.pow(col - 10, 2));
         const wave = Math.sin(distance * 0.5 - time * 0.002) + 1;
+        const waveActive = wave > 1.8;
         
-        if (wave > 1.7) {
+        if (topActive || centerActive || bottomActive || waveActive) {
           cell.classList.add('active');
-        } else {
-          cell.classList.remove('active');
+          // Aktif hücreleri farklı sürelerde söndür
+          const duration = 1000 + Math.random() * 2000;
+          setTimeout(() => cell.classList.remove('active'), duration);
         }
         
-        // Random sparkle effect
-        if (Math.random() < 0.001) {
+        // Rastgele parıltı efekti (daha nadir)
+        if (Math.random() < 0.0005) {
           cell.classList.add('active');
-          setTimeout(() => cell.classList.remove('active'), 2000);
+          setTimeout(() => cell.classList.remove('active'), 1500);
         }
       });
       
