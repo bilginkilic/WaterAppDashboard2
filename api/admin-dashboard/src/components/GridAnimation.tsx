@@ -42,13 +42,41 @@ const Container = styled(Box)({
   right: 0,
   bottom: 0,
   display: 'grid',
-  gridTemplateColumns: 'repeat(20, 1fr)', // More squares for a denser grid
-  gridTemplateRows: 'repeat(20, 1fr)',
-  gap: '1px',
-  padding: '1px',
+  gridTemplateColumns: 'repeat(2, 1fr)',
+  gridTemplateRows: 'repeat(2, 1fr)',
+  gap: '20px',
+  padding: '20px',
   pointerEvents: 'none',
   zIndex: 0,
-  background: 'linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(33,33,33,0.9) 100%)',
+  background: 'linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(33,33,33,0.95) 100%)',
+});
+
+const GridSection = styled(Box)({
+  position: 'relative',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(10, 1fr)',
+  gridTemplateRows: 'repeat(10, 1fr)',
+  gap: '1px',
+  padding: '1px',
+  overflow: 'hidden',
+  borderRadius: '8px',
+  background: 'rgba(255, 255, 255, 0.02)',
+});
+
+const Message = styled(Box)({
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: 'translate(-50%, -50%)',
+  color: 'rgba(255, 255, 255, 0.7)',
+  fontSize: '0.9rem',
+  textAlign: 'center',
+  width: '80%',
+  pointerEvents: 'none',
+  textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+  opacity: 0.7,
+  fontFamily: 'system-ui, -apple-system, sans-serif',
+  letterSpacing: '0.5px',
 });
 
 const GridCell = styled(Box)(({ theme }) => ({
@@ -80,75 +108,85 @@ const GridCell = styled(Box)(({ theme }) => ({
   },
 }));
 
+const messages = [
+  "Her damla su, geleceğimiz için önemlidir.",
+  "Sürdürülebilir bir dünya için su tasarrufu",
+  "Su ayak izinizi azaltın, dünyayı koruyun",
+  "Birlikte daha iyi bir gelecek için"
+];
+
 const GridAnimation: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Array<HTMLDivElement | null>>([null, null, null, null]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    sectionRefs.current.forEach((section, sectionIndex) => {
+      if (!section) return;
 
-    const cells = Array.from(container.children) as HTMLElement[];
-    
-    // Initial fade-in animation
-    cells.forEach((cell, index) => {
-      const row = Math.floor(index / 20);
-      const col = index % 20;
-      const delay = (row + col) * 0.05; // Diagonal wave effect
-      cell.style.animationDelay = `${delay}s`;
-      cell.classList.add('initial-fade');
-    });
-
-    // Continuous wave animation with focused areas
-    const animateWave = () => {
-      const time = Date.now();
-      cells.forEach((cell, index) => {
-        const row = Math.floor(index / 20);
-        const col = index % 20;
-        
-        // Üst kısımda daha aktif bölge (header)
-        const topActive = row < 5 && Math.random() < 0.03;
-        
-        // Orta kısımda login formu etrafında aktif bölge
-        const centerRow = Math.abs(row - 10);
-        const centerCol = Math.abs(col - 10);
-        const centerActive = 
-          centerRow < 4 && 
-          centerCol < 4 && 
-          Math.random() < 0.02;
-        
-        // Alt kısımda daha aktif bölge (footer)
-        const bottomActive = row > 15 && Math.random() < 0.03;
-        
-        // Dalga efekti
-        const distance = Math.sqrt(Math.pow(row - 10, 2) + Math.pow(col - 10, 2));
-        const wave = Math.sin(distance * 0.5 - time * 0.002) + 1;
-        const waveActive = wave > 1.8;
-        
-        if (topActive || centerActive || bottomActive || waveActive) {
-          cell.classList.add('active');
-          // Aktif hücreleri farklı sürelerde söndür
-          const duration = 1000 + Math.random() * 2000;
-          setTimeout(() => cell.classList.remove('active'), duration);
-        }
-        
-        // Rastgele parıltı efekti (daha nadir)
-        if (Math.random() < 0.0005) {
-          cell.classList.add('active');
-          setTimeout(() => cell.classList.remove('active'), 1500);
-        }
-      });
+      const cells = Array.from(section.children).filter(child => child.classList.contains('grid-cell')) as HTMLElement[];
       
-      requestAnimationFrame(animateWave);
-    };
+      // Initial fade-in animation
+      cells.forEach((cell, index) => {
+        const row = Math.floor(index / 10);
+        const col = index % 10;
+        const delay = (row + col) * 0.05;
+        cell.style.animationDelay = `${delay}s`;
+        cell.classList.add('initial-fade');
+      });
 
-    const animation = requestAnimationFrame(animateWave);
-    return () => cancelAnimationFrame(animation);
+      // Continuous animation for each section
+      const animateSection = () => {
+        const time = Date.now();
+        cells.forEach((cell, index) => {
+          const row = Math.floor(index / 10);
+          const col = index % 10;
+          
+          // Her bölüm için farklı animasyon desenleri
+          switch(sectionIndex) {
+            case 0: // Sol üst - Yatay dalga
+              const waveX = Math.sin(col * 0.5 - time * 0.001) + 1;
+              if (waveX > 1.7) cell.classList.add('active');
+              else cell.classList.remove('active');
+              break;
+              
+            case 1: // Sağ üst - Dikey dalga
+              const waveY = Math.sin(row * 0.5 - time * 0.001) + 1;
+              if (waveY > 1.7) cell.classList.add('active');
+              else cell.classList.remove('active');
+              break;
+              
+            case 2: // Sol alt - Spiral
+              const distanceFromCenter = Math.sqrt(Math.pow(row - 5, 2) + Math.pow(col - 5, 2));
+              const spiral = Math.sin(distanceFromCenter - time * 0.002) + 1;
+              if (spiral > 1.7) cell.classList.add('active');
+              else cell.classList.remove('active');
+              break;
+              
+            case 3: // Sağ alt - Rastgele parıltılar
+              if (Math.random() < 0.002) {
+                cell.classList.add('active');
+                setTimeout(() => cell.classList.remove('active'), 1000 + Math.random() * 1000);
+              }
+              break;
+          }
+        });
+        
+        requestAnimationFrame(animateSection);
+      };
+
+      const animation = requestAnimationFrame(animateSection);
+      return () => cancelAnimationFrame(animation);
+    });
   }, []);
 
   return (
-    <Container ref={containerRef}>
-      {Array(400).fill(null).map((_, i) => (
-        <GridCell key={i} />
+    <Container>
+      {[0, 1, 2, 3].map((sectionIndex) => (
+        <GridSection key={sectionIndex} ref={el => sectionRefs.current[sectionIndex] = el as HTMLDivElement}>
+          {Array(100).fill(null).map((_, i) => (
+            <GridCell key={i} className="grid-cell" />
+          ))}
+          <Message>{messages[sectionIndex]}</Message>
+        </GridSection>
       ))}
     </Container>
   );
