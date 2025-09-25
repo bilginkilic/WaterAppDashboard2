@@ -96,9 +96,7 @@ npm run dev
 
 Admin dashboard can be accessed at: https://waterappdaily.netlify.app/login
 
-Default admin credentials:
-- Email: admin@waterapp.com
-- Password: admin123
+Please contact the system administrator for access credentials.
 
 ## 📱 Related Applications
 
