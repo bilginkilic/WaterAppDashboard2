@@ -72,6 +72,7 @@ next-env.d.ts
 **/firebase-service-account*.json
 **/waterappdaily-firebase-adminsdk*.json
 firebase-service-account.json
+firebase-service-account-new.json
 .env
 .env.*
 !.env.example

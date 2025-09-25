@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
+import { firebaseAdmin } from '../config/firebase';
 import jwt from 'jsonwebtoken';
 
-interface AdminTokenPayload {
-  email: string;
-  isAdmin: boolean;
+interface JwtPayload {
+  userId: string;
+  email?: string;
 }
 
-export const verifyAdminToken = (req: Request, res: Response, next: NextFunction) => {
+export const verifyAdminToken = async (req: Request, res: Response, next: NextFunction) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
@@ -14,15 +15,38 @@ export const verifyAdminToken = (req: Request, res: Response, next: NextFunction
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as AdminTokenPayload;
+    console.log('Verifying token:', token);
     
-    if (!decoded.isAdmin || decoded.email !== (process.env.ADMIN_EMAIL || 'admin@waterapp.com')) {
-      return res.status(403).json({ message: 'Access denied. Admin privileges required.' });
+    // Firebase token'ı doğrula
+    const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
+    console.log('Decoded token:', decodedToken);
+
+    // Admin kontrolü
+    if (!decodedToken.email || decodedToken.email !== 'admin@waterapp.com') {
+      console.log('Access denied. User email:', decodedToken.email);
+      return res.status(403).json({ 
+        message: 'Access denied. Admin privileges required.',
+        userEmail: decodedToken.email,
+        expectedEmail: 'admin@waterapp.com'
+      });
     }
 
-    req.body.admin = decoded;
+    // Admin claim kontrolü
+    if (!decodedToken.admin) {
+      console.log('Access denied. No admin claim');
+      return res.status(403).json({ 
+        message: 'Access denied. Admin privileges required.'
+      });
+    }
+
+    console.log('Admin access granted for:', decodedToken.email);
+    req.body.admin = decodedToken;
     next();
   } catch (error) {
-    res.status(400).json({ message: 'Invalid token.' });
+    console.error('Token verification error:', error);
+    res.status(400).json({ 
+      message: 'Invalid token.',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    });
   }
 }; 
