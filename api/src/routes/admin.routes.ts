@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
 import { body } from 'express-validator';
-import { adminLogin, getLeaderboards } from '../controllers/admin.controller';
+import { adminLogin, getLeaderboards, getStatistics } from '../controllers/admin.controller';
 import { verifyAdminToken } from '../middleware/admin.middleware';
 
 const router = express.Router();
@@ -18,6 +18,11 @@ router.get('/leaderboards', (req: Request, res: Response, next) => {
   void verifyAdminToken(req, res, next);
 }, (req: Request, res: Response) => {
   void getLeaderboards(req, res);
+});
+
+// Statistics endpoint
+router.get('/statistics', (req: Request, res: Response) => {
+  void getStatistics(req, res);
 });
 
 export default router; 

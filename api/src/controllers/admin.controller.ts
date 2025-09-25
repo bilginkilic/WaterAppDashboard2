@@ -212,12 +212,11 @@ export const getUsers = async (req: Request, res: Response) => {
 
 export const getStatistics = async (req: Request, res: Response) => {
   try {
-    // Kullanıcı listesini al
+    // Get all users from Firebase
     const listUsersResult = await firebaseAdmin.auth().listUsers();
     const users = listUsersResult.users;
-    console.log('Total users:', users.length);
     
-    // Son 30 gün içinde giriş yapmış kullanıcıları aktif sayalım
+    // Calculate active users (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     
@@ -227,39 +226,25 @@ export const getStatistics = async (req: Request, res: Response) => {
         : null;
       return lastSignIn && lastSignIn > thirtyDaysAgo;
     }).length;
-    console.log('Active users:', activeUsers);
 
-    // Waterprint verilerini al
+    // Get waterprint data
     const waterprintSnapshot = await firebaseAdmin.firestore()
       .collection('WaterprintProfiles')
       .get();
 
-    const waterprints = waterprintSnapshot.docs.map(doc => {
-      const data = doc.data();
-      console.log('Waterprint data:', data);
-      return data;
-    });
-    console.log('Total waterprints:', waterprints.length);
+    const waterprints = waterprintSnapshot.docs.map(doc => doc.data());
     
-    // Ortalama su tüketimini hesapla
+    // Calculate average water usage
     const averageWaterUsage = waterprints.length > 0
-      ? Math.round(waterprints.reduce((acc, curr) => {
-          const usage = curr.totalWaterUsage || 0;
-          console.log('Water usage:', usage);
-          return acc + usage;
-        }, 0) / waterprints.length)
+      ? Math.round(waterprints.reduce((acc, curr) => acc + (curr.currentWaterprint || 0), 0) / waterprints.length)
       : 0;
-    console.log('Average water usage:', averageWaterUsage);
 
-    // Toplam tasarrufu hesapla (başlangıç - şimdiki tüketim)
+    // Calculate total water saved
     const totalWaterSaved = waterprints.reduce((acc, curr) => {
-      const initial = curr.initialWaterUsage || 0;
-      const current = curr.totalWaterUsage || 0;
-      const saved = initial - current;
-      console.log('Initial:', initial, 'Current:', current, 'Saved:', saved);
-      return acc + (saved > 0 ? saved : 0);
+      const initial = curr.initialWaterprint || 0;
+      const current = curr.currentWaterprint || 0;
+      return acc + (initial - current > 0 ? initial - current : 0);
     }, 0);
-    console.log('Total water saved:', totalWaterSaved);
 
     const stats = {
       totalUsers: users.length,
@@ -267,7 +252,6 @@ export const getStatistics = async (req: Request, res: Response) => {
       averageWaterUsage,
       totalWaterSaved: Math.round(totalWaterSaved),
     };
-    console.log('Final stats:', stats);
 
     res.json(stats);
   } catch (error) {
