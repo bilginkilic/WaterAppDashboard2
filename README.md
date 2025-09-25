@@ -84,8 +84,8 @@ npm install
 ```
 3. Set up environment variables:
 ```env
-ADMIN_EMAIL=admin@waterapp.com
-ADMIN_PASSWORD=admin123
+# Copy .env.example to .env and update with your credentials
+cp .env.example .env
 ```
 4. Start the development server:
 ```bash
