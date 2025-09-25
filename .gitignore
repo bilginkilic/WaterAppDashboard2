@@ -67,6 +67,11 @@ next-env.d.ts
 *.pack
 **/*.pack
 
-# Firebase
+# Firebase credentials
 **/firebase-adminsdk*.json
-firebase-service-account.json 
+**/firebase-service-account*.json
+**/waterappdaily-firebase-adminsdk*.json
+firebase-service-account.json
+.env
+.env.*
+!.env.example
