@@ -158,7 +158,7 @@ export const getLeaderboards = async (req: Request, res: Response) => {
 
     // Calculate statistics
     const totalUsers = userList.users.length;
-    const totalTasks = Array.from(waterprintData.values()).reduce((acc, data) => acc + data.tasksCompleted, 0);
+    const totalTasks = Array.from(waterprintData.values()).reduce((acc: number, data: { tasksCompleted: number }) => acc + data.tasksCompleted, 0);
 
     // Average improvement calculation
     let totalImprovement = 0;
@@ -258,4 +258,4 @@ export const getStatistics = async (req: Request, res: Response) => {
     console.error('Error fetching statistics:', error);
     res.status(500).json({ error: 'İstatistikler alınamadı' });
   }
-}; 
+};

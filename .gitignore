@@ -23,6 +23,7 @@ node_modules
 *.pem
 .env*
 !.env.example
+!.env.local.example
 
 # Debug logs
 npm-debug.log*
@@ -67,12 +68,7 @@ next-env.d.ts
 *.pack
 **/*.pack
 
-# Firebase credentials
+# Firebase service account files (NEVER commit these)
 **/firebase-adminsdk*.json
 **/firebase-service-account*.json
 **/waterappdaily-firebase-adminsdk*.json
-firebase-service-account.json
-firebase-service-account-new.json
-.env
-.env.*
-!.env.example

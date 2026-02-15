@@ -7,11 +7,12 @@ interface JwtPayload {
   email?: string;
 }
 
-export const verifyAdminToken = async (req: Request, res: Response, next: NextFunction) => {
+export const verifyAdminToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
-    return res.status(401).json({ message: 'Access denied. No token provided.' });
+    res.status(401).json({ message: 'Access denied. No token provided.' });
+    return;
   }
 
   try {
@@ -24,19 +25,21 @@ export const verifyAdminToken = async (req: Request, res: Response, next: NextFu
     // Admin kontrolü
     if (!decodedToken.email || decodedToken.email !== 'admin@waterapp.com') {
       console.log('Access denied. User email:', decodedToken.email);
-      return res.status(403).json({ 
+      res.status(403).json({ 
         message: 'Access denied. Admin privileges required.',
         userEmail: decodedToken.email,
         expectedEmail: 'admin@waterapp.com'
       });
+      return;
     }
 
     // Admin claim kontrolü
     if (!decodedToken.admin) {
       console.log('Access denied. No admin claim');
-      return res.status(403).json({ 
+      res.status(403).json({ 
         message: 'Access denied. Admin privileges required.'
       });
+      return;
     }
 
     console.log('Admin access granted for:', decodedToken.email);
