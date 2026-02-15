@@ -1,13 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { AdminProvider } from './contexts/AdminContext'
-
-const inter = Inter({ subsets: ['latin'] })
+import { LanguageProvider } from './contexts/LanguageContext'
 
 export const metadata: Metadata = {
-  title: 'Water App Dashboard',
-  description: 'Admin dashboard for Water App',
+  title: 'WaterApp Dashboard',
+  description: 'Water Footprint Admin Dashboard',
 }
 
 export default function RootLayout({
@@ -17,10 +15,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <AdminProvider>
-          {children}
-        </AdminProvider>
+      <body className="antialiased">
+        <LanguageProvider>
+          <AdminProvider>
+            {children}
+          </AdminProvider>
+        </LanguageProvider>
       </body>
     </html>
   )

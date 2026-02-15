@@ -3,7 +3,9 @@
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdmin } from '../contexts/AdminContext';
-import { Droplet } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import { Droplet, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -11,9 +13,9 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, isAuthenticated } = useAdmin();
+  const { t } = useLanguage();
   const router = useRouter();
 
-  // Zaten giris yapilmissa dashboard'a yonlendir
   if (isAuthenticated) {
     router.push('/dashboard');
     return null;
@@ -23,79 +25,94 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
-
-    // Basit if/else kontrolu
     const success = login(email, password);
-    
     if (success) {
       router.push('/dashboard');
     } else {
-      setError('Geçersiz e-posta veya şifre');
+      setError(t.invalidCredentials);
     }
-    
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f0f7ff] bg-opacity-50 bg-[radial-gradient(#e0e7ff_1px,transparent_1px)] [background-size:16px_16px]">
-      <div className="w-full max-w-md">
-        <div className="bg-white/95 shadow-xl border border-blue-100 rounded-2xl p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
-              <Droplet className="h-8 w-8 text-blue-600" />
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden bg-black">
+      {/* Apple TV: Cinematic gradient */}
+      <div className="absolute inset-0 atv-gradient" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_20%,rgba(255,255,255,0.04)_0%,transparent_50%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_60%_at_20%_80%,rgba(255,255,255,0.03)_0%,transparent_50%)]" />
+
+      {/* Language switcher - top right */}
+      <div className="absolute top-8 right-8 z-20">
+        <LanguageSwitcher />
+      </div>
+
+      {/* Login card - Apple TV floating style */}
+      <div className="relative z-10 w-full max-w-md px-6">
+        <div className="atv-hero-card atv-glow p-10">
+          {/* Logo - large, centered */}
+          <div className="flex flex-col items-center mb-10">
+            <div className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center mb-6 shadow-[0_0_40px_-10px_rgba(255,255,255,0.2)]">
+              <Droplet className="h-10 w-10 text-white" strokeWidth={1.5} />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900">WaterApp Admin</h1>
-            <p className="text-sm text-gray-500 mt-1">Su Ayak İzi Dashboard</p>
+            <h1 className="text-3xl font-semibold text-white tracking-tight">
+              {t.loginTitle}
+            </h1>
+            <p className="text-white/50 text-base mt-2 font-light">
+              {t.loginSubtitle}
+            </p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-3 text-center">
+              <div className="rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm py-3 px-4 text-center">
                 {error}
               </div>
             )}
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-                E-posta
+              <label htmlFor="email" className="block text-sm font-medium text-white/70 mb-3">
+                {t.email}
               </label>
               <input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@waterapp.com"
+                placeholder={t.emailPlaceholder}
                 required
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+                className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 transition-all duration-200 text-base"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Şifre
+              <label htmlFor="password" className="block text-sm font-medium text-white/70 mb-3">
+                {t.password}
               </label>
               <input
                 id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Şifrenizi girin"
+                placeholder={t.passwordPlaceholder}
                 required
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+                className="w-full px-5 py-4 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 transition-all duration-200 text-base"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-lg shadow-blue-200"
+              className="w-full py-4 px-6 bg-white text-black font-semibold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-base flex items-center justify-center gap-3 group hover:bg-white/90"
             >
-              {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+              {loading ? t.signingIn : t.signIn}
+              {!loading && <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" strokeWidth={2} />}
             </button>
           </form>
         </div>
+
+        <p className="text-center text-white/30 text-sm mt-8 font-light">
+          WaterApp © {new Date().getFullYear()}
+        </p>
       </div>
     </div>
   );
