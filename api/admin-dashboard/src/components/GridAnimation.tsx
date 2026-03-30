@@ -181,7 +181,7 @@ const GridAnimation: React.FC = () => {
   return (
     <Container>
       {[0, 1, 2, 3].map((sectionIndex) => (
-        <GridSection key={sectionIndex} ref={el => sectionRefs.current[sectionIndex] = el as HTMLDivElement}>
+        <GridSection key={sectionIndex} ref={el => { sectionRefs.current[sectionIndex] = el as HTMLDivElement; }}>
           {Array(100).fill(null).map((_, i) => (
             <GridCell key={i} className="grid-cell" />
           ))}

@@ -1,13 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
-import { firebaseAdmin } from '../config/firebase';
 import jwt from 'jsonwebtoken';
 
-interface JwtPayload {
-  userId: string;
-  email?: string;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@waterapp.com';
+
+interface AdminJwtPayload {
+  email: string;
+  isAdmin?: boolean;
 }
 
-export const verifyAdminToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const verifyAdminToken = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
@@ -16,40 +22,31 @@ export const verifyAdminToken = async (req: Request, res: Response, next: NextFu
   }
 
   try {
-    console.log('Verifying token:', token);
-    
-    // Firebase token'ı doğrula
-    const decodedToken = await firebaseAdmin.auth().verifyIdToken(token);
-    console.log('Decoded token:', decodedToken);
+    const decoded = jwt.verify(token, JWT_SECRET) as AdminJwtPayload;
 
-    // Admin kontrolü
-    if (!decodedToken.email || decodedToken.email !== 'admin@waterapp.com') {
-      console.log('Access denied. User email:', decodedToken.email);
-      res.status(403).json({ 
+    if (!decoded.email || decoded.email !== ADMIN_EMAIL) {
+      res.status(403).json({
         message: 'Access denied. Admin privileges required.',
-        userEmail: decodedToken.email,
-        expectedEmail: 'admin@waterapp.com'
+        userEmail: decoded.email,
+        expectedEmail: ADMIN_EMAIL,
       });
       return;
     }
 
-    // Admin claim kontrolü
-    if (!decodedToken.admin) {
-      console.log('Access denied. No admin claim');
-      res.status(403).json({ 
-        message: 'Access denied. Admin privileges required.'
+    if (!decoded.isAdmin) {
+      res.status(403).json({
+        message: 'Access denied. Admin privileges required.',
       });
       return;
     }
 
-    console.log('Admin access granted for:', decodedToken.email);
-    req.body.admin = decodedToken;
+    req.body.admin = decoded;
     next();
   } catch (error) {
     console.error('Token verification error:', error);
-    res.status(400).json({ 
+    res.status(401).json({
       message: 'Invalid token.',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error instanceof Error ? error.message : 'Unknown error',
     });
   }
-}; 
+};

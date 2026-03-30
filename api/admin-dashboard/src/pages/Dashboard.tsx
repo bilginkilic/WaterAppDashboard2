@@ -33,6 +33,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { API_BASE_URL } from '../config';
 
 interface LeaderboardData {
   users: Array<{
@@ -103,9 +104,7 @@ const Dashboard: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        const apiUrl = 'https://waterappdashboard2.onrender.com';
-
-        const response = await axios.get<LeaderboardData>(`${apiUrl}/api/admin/leaderboards`, {
+        const response = await axios.get<LeaderboardData>(`${API_BASE_URL}/api/admin/leaderboards`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setData(response.data);

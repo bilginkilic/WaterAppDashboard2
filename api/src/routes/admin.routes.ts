@@ -9,17 +9,17 @@ const router = express.Router();
 router.post('/login', [
   body('email').isEmail().withMessage('Email is required'),
   body('password').notEmpty().withMessage('Password is required')
-], (req: Request, res: Response) => {
+], async (req: Request, res: Response): Promise<void> => {
   void adminLogin(req, res);
 });
 
 // Protected admin routes
-router.get('/leaderboards', verifyAdminToken, (req: Request, res: Response) => {
+router.get('/leaderboards', verifyAdminToken, async (req: Request, res: Response): Promise<void> => {
   void getLeaderboards(req, res);
 });
 
 // Statistics endpoint
-router.get('/statistics', (req: Request, res: Response) => {
+router.get('/statistics', async (req: Request, res: Response): Promise<void> => {
   void getStatistics(req, res);
 });
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -9,9 +10,8 @@ interface AuthContextType {
 }
 
 interface LoginResponse {
-  userId: string;
   token: string;
-  name?: string;
+  message?: string;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -29,8 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      // Firebase Authentication ile giriş yap
-      const response = await axios.post<LoginResponse>('https://waterappdashboard2.onrender.com/api/admin/login', {
+      const response = await axios.post<LoginResponse>(`${API_BASE_URL}/api/admin/login`, {
         email,
         password
       }, {
@@ -39,14 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       });
 
-      console.log('Login response:', response.data);
-      const { token, userId, name } = response.data;
+      const { token } = response.data;
       if (!token) {
         throw new Error('Token not found in response');
       }
-      console.log('User info:', { userId, name });
       localStorage.setItem('adminToken', token);
-      localStorage.setItem('userEmail', name || ''); // name field contains email in Firebase response
       setToken(token);
     } catch (error) {
       console.error('Login error:', error);

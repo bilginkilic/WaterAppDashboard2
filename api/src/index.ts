@@ -1,11 +1,9 @@
+import './load-env';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import waterprintRoutes from './routes/waterprint.routes';
 import adminRoutes from './routes/admin.routes';
-
-dotenv.config();
 
 const app = express();
 
