@@ -19,8 +19,14 @@ const translations = {
 
     // Dashboard header
     dashboardTitle: 'Water Footprint Dashboard',
+    waterChallenge: 'Water Challenge',
+    adminConsole: 'Admin console',
+    verifiedLive: 'Verified live',
+    heroKicker: 'Live water challenge',
+    todaySavings: 'Today savings',
     logout: 'Logout',
     heroSubtitle: 'Monitor and analyze user water consumption patterns',
+    authorizedAccessOnly: 'Authorized admin access only',
 
     // Stats cards
     totalUsers: 'Total Users',
@@ -31,6 +37,14 @@ const translations = {
     totalCurrentFootprint: 'Total current water footprint',
     totalImprovement: 'Total Improvement',
     overallImprovementRate: 'Overall improvement rate',
+    litersSaved: 'Liters Saved',
+    litersSavedSub: 'Saved from baseline usage',
+    co2Equivalent: 'CO2 Equivalent',
+    co2EquivalentSub: 'Approximate daily impact',
+    avgChallengeDays: 'Avg Challenge Days',
+    avgChallengeDaysSub: 'Average user challenge duration',
+    topIndividual: 'Top Individual',
+    topIndividualSub: 'No ranked user yet',
     ltPerDay: 'lt/day',
 
     // Tabs
@@ -78,8 +92,14 @@ const translations = {
 
     // Dashboard header
     dashboardTitle: 'Su Ayak İzi Dashboard',
+    waterChallenge: 'Water Challenge',
+    adminConsole: 'Yönetim konsolu',
+    verifiedLive: 'Canlı doğrulanmış',
+    heroKicker: 'Canlı su challenge',
+    todaySavings: 'Bugün tasarruf',
     logout: 'Çıkış Yap',
     heroSubtitle: 'Kullanıcı su tüketim alışkanlıklarını izleyin ve analiz edin',
+    authorizedAccessOnly: 'Yalnızca yetkili yönetici erişimi',
 
     // Stats cards
     totalUsers: 'Toplam Kullanıcı',
@@ -90,6 +110,14 @@ const translations = {
     totalCurrentFootprint: 'Toplam güncel su ayak izi',
     totalImprovement: 'Toplam İyileştirme',
     overallImprovementRate: 'Genel iyileştirme oranı',
+    litersSaved: 'Tasarruf Edilen Litre',
+    litersSavedSub: 'Başlangıç tüketimine göre',
+    co2Equivalent: 'CO2 Eşdeğeri',
+    co2EquivalentSub: 'Yaklaşık günlük etki',
+    avgChallengeDays: 'Ort. Challenge Günü',
+    avgChallengeDaysSub: 'Kullanıcı başına ortalama süre',
+    topIndividual: 'En İyi Bireysel',
+    topIndividualSub: 'Henüz sıralı kullanıcı yok',
     ltPerDay: 'lt/gün',
 
     // Tabs
