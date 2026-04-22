@@ -64,6 +64,25 @@ interface AdminUsersResponse {
   stats: Stats;
 }
 
+interface AdminUsersErrorBody {
+  error?: string;
+  detail?: string;
+  hint?: string;
+}
+
+async function readAdminUsersError(response: Response): Promise<string> {
+  const head = `${response.status} ${response.statusText}`;
+  try {
+    const body = (await response.json()) as AdminUsersErrorBody;
+    const parts = [body.detail, body.hint, body.error].filter(
+      (x): x is string => typeof x === 'string' && x.length > 0
+    );
+    return parts.length ? `${head}: ${parts.join(' — ')}` : head;
+  } catch {
+    return head;
+  }
+}
+
 export default function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -78,7 +97,9 @@ export default function UserList() {
     const fetchUsers = async () => {
       try {
         const response = await fetch('/api/admin/users');
-        if (!response.ok) throw new Error(t.errorOccurred);
+        if (!response.ok) {
+          throw new Error(await readAdminUsersError(response));
+        }
         const payload = await response.json() as AdminUsersResponse;
 
         const safeUsers = (payload.users || []).map((u) => ({
@@ -112,7 +133,11 @@ export default function UserList() {
           dailyData: serverStats.dailyData || [],
         });
       } catch (err) {
-        setError(err instanceof Error ? err.message : t.errorOccurred);
+        setError(
+          err instanceof Error && err.message
+            ? err.message
+            : t.errorOccurred
+        );
       } finally {
         setLoading(false);
       }
