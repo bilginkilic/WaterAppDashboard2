@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAdmin } from '../contexts/AdminContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import ThemeSwitcher from '../components/ThemeSwitcher';
 import { Droplet, ArrowRight, ShieldCheck } from 'lucide-react';
 
 const LOGIN_BG_VIDEO_URL = 'https://player.vimeo.com/external/371433846.sd.mp4?s=236751dd17f0f8ef6a471fbe472f7eccdd6a99f6&profile_id=164&oauth2_token_id=57447761';
@@ -56,7 +55,6 @@ export default function LoginPage() {
       <div className="absolute inset-0 wa-mesh pointer-events-none" />
 
       <div className="absolute top-6 right-6 z-20 flex items-center gap-2 sm:top-8 sm:right-8">
-        <ThemeSwitcher />
         <LanguageSwitcher />
       </div>
 

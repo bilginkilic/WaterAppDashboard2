@@ -6,7 +6,6 @@ import { useAdmin } from '../contexts/AdminContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import UserList from '../components/UserList';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import ThemeSwitcher from '../components/ThemeSwitcher';
 import { LogOut, Droplet } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -68,7 +67,6 @@ export default function DashboardPage() {
               <span className="h-2 w-2 animate-pulse rounded-full bg-teal-500 dark:bg-teal-300" />
               {t.verifiedLive}
             </div>
-            <ThemeSwitcher />
             <LanguageSwitcher />
             <button
               type="button"

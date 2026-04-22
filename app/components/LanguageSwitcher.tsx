@@ -10,7 +10,7 @@ import {
 } from './ui/dropdown-menu';
 
 const languages: { code: Lang; label: string; flag: string }[] = [
-  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
 ];
 

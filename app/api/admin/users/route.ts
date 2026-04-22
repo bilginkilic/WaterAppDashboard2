@@ -155,7 +155,7 @@ export async function GET() {
         });
       }
     }
-    const users = [...byEmail.values(), ...orphans];
+    const users = [...Array.from(byEmail.values()), ...orphans];
 
     // Aggregate stats
     const totalStats = {

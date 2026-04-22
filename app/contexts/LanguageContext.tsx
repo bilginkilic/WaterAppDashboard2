@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 export type Lang = 'en' | 'tr';
 
@@ -170,16 +170,27 @@ const LanguageContext = createContext<LanguageContextType>({
 export const useLanguage = () => useContext(LanguageContext);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('lang') as Lang) || 'en';
+  // İlk render'da SSR ile aynı olsun diye her zaman 'en'; sonra localStorage'tan yüklüyoruz.
+  const [lang, setLangState] = useState<Lang>('en');
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('lang') as Lang | null;
+      if (stored === 'en' || stored === 'tr') {
+        setLangState(stored);
+      }
+    } catch {
+      /* ignore */
     }
-    return 'en';
-  });
+  }, []);
 
   const setLang = useCallback((newLang: Lang) => {
     setLangState(newLang);
-    localStorage.setItem('lang', newLang);
+    try {
+      localStorage.setItem('lang', newLang);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   return (

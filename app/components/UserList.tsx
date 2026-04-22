@@ -15,7 +15,6 @@ import { format } from 'date-fns';
 import { enUS, tr } from 'date-fns/locale';
 import { TrendingUp, Users, Droplet, Award, Calendar, Trophy, Target, BarChart3, Gauge, Leaf, CalendarClock, Flame } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface DailyUsage {
   date: string;
@@ -72,8 +71,7 @@ export default function UserList() {
   const [error, setError] = useState<string | null>(null);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { t, lang } = useLanguage();
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
+  const isDark = false;
   const dateLocale = lang === 'tr' ? tr : enUS;
 
   useEffect(() => {
