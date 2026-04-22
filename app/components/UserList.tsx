@@ -19,7 +19,8 @@ import { useTheme } from '../contexts/ThemeContext';
 
 interface DailyUsage {
   date: string;
-  waterprint: number;
+  value?: number;
+  waterprint?: number;
 }
 
 interface Waterprint {
@@ -59,6 +60,11 @@ interface Stats {
   dailyData: DailyData[];
 }
 
+interface AdminUsersResponse {
+  users: User[];
+  stats: Stats;
+}
+
 export default function UserList() {
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -75,83 +81,38 @@ export default function UserList() {
       try {
         const response = await fetch('/api/admin/users');
         if (!response.ok) throw new Error(t.errorOccurred);
-        const userData: { users: User[] } = await response.json();
+        const payload = await response.json() as AdminUsersResponse;
 
-        const usersWithData = await Promise.all(
-          userData.users.map(async (user) => {
-            try {
-              const progressResponse = await fetch(
-                `https://waterappdashboard2.onrender.com/api/waterprint/progress/${user.id}`,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
-                    'Content-Type': 'application/json',
-                  },
-                }
-              );
-              if (!progressResponse.ok) {
-                return { ...user, waterprint: { initial: null, current: null, startDate: null, improvement: null, dailyUsage: [] } };
-              }
-              const progressData = await progressResponse.json();
-              return {
-                ...user,
-                waterprint: {
-                  initial: progressData.initialWaterprint,
-                  current: progressData.currentWaterprint,
-                  startDate: progressData.startDate,
-                  dailyUsage: progressData.progressHistory || [],
-                  improvement:
-                    progressData.initialWaterprint && progressData.currentWaterprint
-                      ? ((progressData.initialWaterprint - progressData.currentWaterprint) / progressData.initialWaterprint * 100).toFixed(2)
-                      : null,
-                },
-              };
-            } catch {
-              return { ...user, waterprint: { initial: null, current: null, startDate: null, improvement: null, dailyUsage: [] } };
-            }
-          })
-        );
-
-        const totalStats = {
-          initialTotal: usersWithData.reduce((s, u) => s + (u.waterprint.initial || 0), 0),
-          currentTotal: usersWithData.reduce((s, u) => s + (u.waterprint.current || 0), 0),
-          userCount: usersWithData.length,
-          activeUserCount: usersWithData.filter((u) => u.waterprint.current !== null).length,
-        };
-
-        const sortedByImprovement = [...usersWithData]
-          .filter((u) => u.waterprint.improvement !== null)
-          .sort((a, b) => Number(b.waterprint.improvement) - Number(a.waterprint.improvement));
-
-        const sortedByInitial = [...usersWithData]
-          .filter((u) => u.waterprint.initial !== null)
-          .sort((a, b) => Number(a.waterprint.initial) - Number(b.waterprint.initial));
-
-        const dailyData = new Map<string, { totalWaterprint: number; userCount: number }>();
-        usersWithData.forEach((user) => {
-          user.waterprint.dailyUsage.forEach((usage: DailyUsage) => {
-            const date = new Date(usage.date).toISOString().split('T')[0];
-            const current = dailyData.get(date) || { totalWaterprint: 0, userCount: 0 };
-            dailyData.set(date, { totalWaterprint: current.totalWaterprint + usage.waterprint, userCount: current.userCount + 1 });
-          });
-        });
-
-        const last30Days = Array.from({ length: 30 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - i);
-          return date.toISOString().split('T')[0];
-        }).reverse();
-
-        const dailyChartData = last30Days.map((date) => ({
-          date,
-          totalWaterprint: dailyData.get(date)?.totalWaterprint || 0,
-          averageWaterprint: (dailyData.get(date)?.userCount || 0) > 0
-            ? (dailyData.get(date)?.totalWaterprint || 0) / (dailyData.get(date)?.userCount || 1)
-            : 0,
+        const safeUsers = (payload.users || []).map((u) => ({
+          ...u,
+          waterprint: {
+            initial: u.waterprint?.initial ?? null,
+            current: u.waterprint?.current ?? null,
+            startDate: u.waterprint?.startDate ?? null,
+            improvement: u.waterprint?.improvement ?? null,
+            dailyUsage: u.waterprint?.dailyUsage ?? [],
+          },
         }));
 
-        setUsers(usersWithData);
-        setStats({ topImprovement: sortedByImprovement.slice(0, 3), bestInitial: sortedByInitial.slice(0, 3), total: totalStats, dailyData: dailyChartData });
+        const serverStats = payload.stats || {
+          topImprovement: [],
+          bestInitial: [],
+          total: { initialTotal: 0, currentTotal: 0, userCount: safeUsers.length, activeUserCount: 0 },
+          dailyData: [],
+        };
+
+        setUsers(safeUsers);
+        setStats({
+          topImprovement: serverStats.topImprovement || [],
+          bestInitial: serverStats.bestInitial || [],
+          total: {
+            initialTotal: serverStats.total?.initialTotal || 0,
+            currentTotal: serverStats.total?.currentTotal || 0,
+            userCount: serverStats.total?.userCount ?? safeUsers.length,
+            activeUserCount: serverStats.total?.activeUserCount || 0,
+          },
+          dailyData: serverStats.dailyData || [],
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : t.errorOccurred);
       } finally {
