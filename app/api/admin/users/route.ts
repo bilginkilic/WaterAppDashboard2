@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { firebaseAdmin } from '../../../../lib/firebase';
 import { format, subDays } from 'date-fns';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 type AnyDate = string | number | Date | { _seconds?: number; seconds?: number; toDate?: () => Date } | null | undefined;
 
 function toIsoString(value: AnyDate): string | null {

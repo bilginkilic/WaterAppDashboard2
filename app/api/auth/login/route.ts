@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../../../lib/firebase';
+import { getClientAuth } from '../../../../lib/firebase';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  const auth = getClientAuth();
   try {
     const { email, password } = await request.json();
 
