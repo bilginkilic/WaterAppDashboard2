@@ -10,7 +10,11 @@
 
 [build]
   command = "npm run build"
-  # @netlify/plugin-nextjs yayımlama dizinini kendisi yönetir.
+  # Netlify varsayılanı publish'ı repo kökü yapıyor; bu da "base" ile aynı olunca
+  # @netlify/plugin-nextjs v5 "publish directory cannot be the same as the base
+  # directory" hatası veriyor. Build çıktısını açıkça .next veriyoruz
+  # (netlify build sonrası .next vardır; eklenti bundan ileri taşır).
+  publish = ".next"
 
 [build.environment]
   NODE_VERSION = "20"
