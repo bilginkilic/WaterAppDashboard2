@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from './ui/table';
@@ -15,135 +15,14 @@ import { format } from 'date-fns';
 import { enUS, tr } from 'date-fns/locale';
 import { TrendingUp, Users, Droplet, Award, Calendar, Trophy, Target, BarChart3, Gauge, Leaf, CalendarClock, Flame } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
-
-interface DailyUsage {
-  date: string;
-  value?: number;
-  waterprint?: number;
-}
-
-interface Waterprint {
-  initial: number | null;
-  current: number | null;
-  startDate: string | null;
-  improvement: string | null;
-  dailyUsage: DailyUsage[];
-}
-
-interface User {
-  id: string;
-  email: string | null;
-  displayName: string | null;
-  createdAt: string;
-  lastLoginAt: string | null;
-  waterprint: Waterprint;
-}
-
-interface DailyData {
-  date: string;
-  totalWaterprint: number;
-  averageWaterprint: number;
-}
-
-interface TotalStats {
-  initialTotal: number;
-  currentTotal: number;
-  userCount: number;
-  activeUserCount: number;
-}
-
-interface Stats {
-  topImprovement: User[];
-  bestInitial: User[];
-  total: TotalStats;
-  dailyData: DailyData[];
-}
-
-interface AdminUsersResponse {
-  users: User[];
-  stats: Stats;
-}
-
-interface AdminUsersErrorBody {
-  error?: string;
-  detail?: string;
-  hint?: string;
-}
-
-async function readAdminUsersError(response: Response): Promise<string> {
-  const head = `${response.status} ${response.statusText}`;
-  try {
-    const body = (await response.json()) as AdminUsersErrorBody;
-    const parts = [body.detail, body.hint, body.error].filter(
-      (x): x is string => typeof x === 'string' && x.length > 0
-    );
-    return parts.length ? `${head}: ${parts.join(' — ')}` : head;
-  } catch {
-    return head;
-  }
-}
+import { useDashboardStats, type DashboardUser } from '../contexts/DashboardStatsContext';
 
 export default function UserList() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const { users, stats, loading, error } = useDashboardStats();
+  const [selectedUser, setSelectedUser] = useState<DashboardUser | null>(null);
   const { t, lang } = useLanguage();
   const isDark = false;
   const dateLocale = lang === 'tr' ? tr : enUS;
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await fetch('/api/admin/users');
-        if (!response.ok) {
-          throw new Error(await readAdminUsersError(response));
-        }
-        const payload = await response.json() as AdminUsersResponse;
-
-        const safeUsers = (payload.users || []).map((u) => ({
-          ...u,
-          waterprint: {
-            initial: u.waterprint?.initial ?? null,
-            current: u.waterprint?.current ?? null,
-            startDate: u.waterprint?.startDate ?? null,
-            improvement: u.waterprint?.improvement ?? null,
-            dailyUsage: u.waterprint?.dailyUsage ?? [],
-          },
-        }));
-
-        const serverStats = payload.stats || {
-          topImprovement: [],
-          bestInitial: [],
-          total: { initialTotal: 0, currentTotal: 0, userCount: safeUsers.length, activeUserCount: 0 },
-          dailyData: [],
-        };
-
-        setUsers(safeUsers);
-        setStats({
-          topImprovement: serverStats.topImprovement || [],
-          bestInitial: serverStats.bestInitial || [],
-          total: {
-            initialTotal: serverStats.total?.initialTotal || 0,
-            currentTotal: serverStats.total?.currentTotal || 0,
-            userCount: serverStats.total?.userCount ?? safeUsers.length,
-            activeUserCount: serverStats.total?.activeUserCount || 0,
-          },
-          dailyData: serverStats.dailyData || [],
-        });
-      } catch (err) {
-        setError(
-          err instanceof Error && err.message
-            ? err.message
-            : t.errorOccurred
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, [t.errorOccurred]);
 
   if (loading) {
     return (

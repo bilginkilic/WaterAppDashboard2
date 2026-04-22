@@ -4,10 +4,42 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAdmin } from '../contexts/AdminContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { DashboardStatsProvider, useDashboardStats } from '../contexts/DashboardStatsContext';
 import UserList from '../components/UserList';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { LogOut, Droplet } from 'lucide-react';
 import { useEffect, useState } from 'react';
+
+function HeroTodaySavings() {
+  const { t, lang } = useLanguage();
+  const { loading, totalSavedLiters } = useDashboardStats();
+  const locale = lang === 'tr' ? 'tr-TR' : 'en-US';
+  const value =
+    loading
+      ? '…'
+      : totalSavedLiters !== null
+        ? `${totalSavedLiters.toLocaleString(locale)} L`
+        : '—';
+  return (
+    <div className="rounded-xl border border-teal-500/25 bg-white/80 px-4 py-3 text-right shadow-sm backdrop-blur-sm dark:bg-slate-900/75">
+      <p className="text-[11px] uppercase tracking-wide text-teal-700 dark:text-teal-200/90">{t.todaySavings}</p>
+      <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-white tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function MobileHeroSavings() {
+  const { lang } = useLanguage();
+  const { loading, totalSavedLiters } = useDashboardStats();
+  const locale = lang === 'tr' ? 'tr-TR' : 'en-US';
+  const value =
+    loading
+      ? '…'
+      : totalSavedLiters !== null
+        ? `${totalSavedLiters.toLocaleString(locale)} L`
+        : '—';
+  return <p className="text-lg font-semibold text-slate-900 dark:text-white tabular-nums">{value}</p>;
+}
 
 export default function DashboardPage() {
   const { isAuthenticated, logout } = useAdmin();
@@ -82,45 +114,48 @@ export default function DashboardPage() {
 
       <main className="px-4 pb-16 pt-20 sm:px-6 sm:pt-24">
         <div className="mx-auto max-w-7xl">
-          <section className="mb-6 md:mb-8">
-            <div className="wa-hero-banner hidden md:block">
-              <Image
-                src={heroImageUrl}
-                alt="Water challenge hero"
-                width={2000}
-                height={560}
-                priority
-                className="h-56 w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-white/55 to-transparent dark:from-slate-950/85 dark:via-slate-950/55 dark:to-transparent" />
-              <div className="absolute inset-0 flex items-end justify-between gap-6 p-6">
-                <div className="max-w-xl">
-                  <span className="inline-flex items-center rounded-full border border-teal-500/40 bg-teal-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-200">
-                    {t.heroKicker}
-                  </span>
-                  <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                    {t.dashboardTitle}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-200/90">
-                    {t.heroSubtitle}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-teal-500/25 bg-white/80 px-4 py-3 text-right shadow-sm backdrop-blur-sm dark:bg-slate-900/75">
-                  <p className="text-[11px] uppercase tracking-wide text-teal-700 dark:text-teal-200/90">{t.todaySavings}</p>
-                  <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">--</p>
+          <DashboardStatsProvider>
+            <section className="mb-6 md:mb-8">
+              <div className="wa-hero-banner hidden md:block">
+                <Image
+                  src={heroImageUrl}
+                  alt="Water challenge hero"
+                  width={2000}
+                  height={560}
+                  priority
+                  className="h-56 w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-white/85 via-white/55 to-transparent dark:from-slate-950/85 dark:via-slate-950/55 dark:to-transparent" />
+                <div className="absolute inset-0 flex items-end justify-between gap-6 p-6">
+                  <div className="max-w-xl">
+                    <span className="inline-flex items-center rounded-full border border-teal-500/40 bg-teal-500/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-200">
+                      {t.heroKicker}
+                    </span>
+                    <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+                      {t.dashboardTitle}
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-700 dark:text-slate-200/90">
+                      {t.heroSubtitle}
+                    </p>
+                  </div>
+                  <HeroTodaySavings />
                 </div>
               </div>
-            </div>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-teal-500/20 dark:bg-slate-900/80 md:hidden">
-              <p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-200">{t.heroKicker}</p>
-              <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{t.dashboardTitle}</h2>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t.heroSubtitle}</p>
-            </div>
-          </section>
-          <UserList />
-          <p className="mt-8 text-center text-xs text-slate-500 dark:text-slate-500">
-            WaterApp © {new Date().getFullYear()} · Admin v1.0
-          </p>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-teal-500/20 dark:bg-slate-900/80 md:hidden">
+                <p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-200">{t.heroKicker}</p>
+                <h2 className="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{t.dashboardTitle}</h2>
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t.heroSubtitle}</p>
+                <div className="mt-4 flex items-center justify-between border-t border-slate-200/80 pt-3 dark:border-teal-500/15">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-200">{t.todaySavings}</p>
+                  <MobileHeroSavings />
+                </div>
+              </div>
+            </section>
+            <UserList />
+            <p className="mt-8 text-center text-xs text-slate-500 dark:text-slate-500">
+              WaterApp © {new Date().getFullYear()} · Admin v1.0
+            </p>
+          </DashboardStatsProvider>
         </div>
       </main>
     </div>
