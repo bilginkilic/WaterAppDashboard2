@@ -1,15 +1,20 @@
-# Admin dashboard (CRA). Hassas / ortam değişkenleri Netlify UI’da tutulur:
-# Site settings → Environment variables → Build için:
-#   REACT_APP_API_URL=https://waterappdashboard2.onrender.com
-#   REACT_APP_PRODUCTION_API_URL=https://waterappdashboard2.onrender.com
-# (api/admin-dashboard/.env.example ile aynı isimler)
+# WaterApp Admin — root’taki Next.js 14 (App Router) uygulaması.
+# Eski CRA admin (api/admin-dashboard/) artık bu siteyle deploy edilmiyor.
+#
+# Gerekli env (Netlify → Site settings → Environment variables):
+#   FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
+#     (çok satırlı key'i "…" tırnakları içinde ya da \n escape'li verin)
+#   NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+#   NEXT_PUBLIC_FIREBASE_PROJECT_ID, NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+#   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, NEXT_PUBLIC_FIREBASE_APP_ID
 
 [build]
-  base = "api/admin-dashboard"
-  publish = "build"
-  command = "CI=false npm run build"
+  command = "npm run build"
+  # @netlify/plugin-nextjs yayımlama dizinini kendisi yönetir.
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--no-audit --no-fund"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
