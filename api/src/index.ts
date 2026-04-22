@@ -7,14 +7,18 @@ import adminRoutes from './routes/admin.routes';
 
 const app = express();
 
+// CORS — Netlify dashboard URL'ini commitlemeyin; Render env ile verin
+const dashboardOrigin = process.env.FRONTEND_DASHBOARD_ORIGIN;
+const corsOrigins = [
+  'http://localhost:3002',
+  'http://localhost:3000',
+  'https://waterappdashboard2.onrender.com',
+  ...(dashboardOrigin ? [dashboardOrigin] : []),
+];
+
 // CORS configuration
 app.use(cors({
-  origin: [
-    'http://localhost:3002',
-    'http://localhost:3000',
-    'https://waterappdashboard2.onrender.com',
-    'https://waterappdaily.netlify.app'
-  ],
+  origin: corsOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],

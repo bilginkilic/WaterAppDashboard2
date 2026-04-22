@@ -94,7 +94,7 @@ npm run dev
 
 ## 🔐 Admin Access
 
-Admin dashboard can be accessed at: https://waterappdaily.netlify.app/login
+Admin URL: your Netlify production URL from the site dashboard, path `/login`.
 
 Please contact the system administrator for access credentials.
 

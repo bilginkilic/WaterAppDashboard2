@@ -1,13 +1,10 @@
 # WaterApp Admin — root’taki Next.js 14 (App Router) uygulaması.
 # Eski CRA admin (api/admin-dashboard/) artık bu siteyle deploy edilmiyor.
 #
-# Gerekli env (Netlify → Site settings → Environment variables):
-#   Ya FIREBASE_SERVICE_ACCOUNT = service account JSON (tek satır / Netlify “secret”)
-#   ya da FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY
-#     (çok satırlı private key: Netlify’da "Contains multiple values" veya \n kaçışlı tek satır)
-#   NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-#   NEXT_PUBLIC_FIREBASE_PROJECT_ID, NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-#   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, NEXT_PUBLIC_FIREBASE_APP_ID
+# Tüm gizli değerler sadece Netlify UI (Environment variables) üzerinde.
+# "Secret" işaretli bir env (ör. Firebase proje id) aynı metnin repoda
+# (.firebaserc, README) geçmesine izin vermek için tarama dışı bırakılır;
+# aksi halde build “exposed secrets” ile kesilir.
 
 [build]
   command = "npm run build"
@@ -20,6 +17,9 @@
 [build.environment]
   NODE_VERSION = "20"
   NPM_FLAGS = "--no-audit --no-fund"
+  # Proje id genelde public bilgidir; secret olarak işaretlendiyse repodaki
+  # eşleşmeyi hata sayma (Netlify Secret Scanning).
+  SECRETS_SCAN_OMIT_KEYS = "FIREBASE_PROJECT_ID,NEXT_PUBLIC_FIREBASE_PROJECT_ID"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
