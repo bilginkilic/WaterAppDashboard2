@@ -209,9 +209,17 @@ export async function GET() {
       },
     });
   } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
     console.error('Error listing users:', error);
+    const hint = /credentials missing|FIREBASE_SERVICE_ACCOUNT|private key|PEM|DECODER/i.test(
+      msg
+    )
+      ? 'Netlify: set FIREBASE_SERVICE_ACCOUNT (entire service-account JSON) or the three env vars; ensure vars apply to Functions/runtime (not only build); multiline private key or \\n-escaped line breaks.'
+      : /PERMISSION_DENIED|insufficient|does not have/i.test(msg)
+        ? 'Firebase/GCP: service account için Firestore (ve gerekirse Auth) API erişimini kontrol edin.'
+        : undefined;
     return NextResponse.json(
-      { error: 'Kullanıcı listesi alınamadı', detail: error instanceof Error ? error.message : String(error) },
+      { error: 'Kullanıcı listesi alınamadı', detail: msg, ...(hint && { hint }) },
       { status: 500 }
     );
   }

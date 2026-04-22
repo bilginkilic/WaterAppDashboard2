@@ -2,8 +2,9 @@
 # Eski CRA admin (api/admin-dashboard/) artık bu siteyle deploy edilmiyor.
 #
 # Gerekli env (Netlify → Site settings → Environment variables):
-#   FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
-#     (çok satırlı key'i "…" tırnakları içinde ya da \n escape'li verin)
+#   Ya FIREBASE_SERVICE_ACCOUNT = service account JSON (tek satır / Netlify “secret”)
+#   ya da FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY
+#     (çok satırlı private key: Netlify’da "Contains multiple values" veya \n kaçışlı tek satır)
 #   NEXT_PUBLIC_FIREBASE_API_KEY, NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
 #   NEXT_PUBLIC_FIREBASE_PROJECT_ID, NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
 #   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID, NEXT_PUBLIC_FIREBASE_APP_ID
