@@ -5,6 +5,12 @@ import jwt from 'jsonwebtoken';
 import { admin } from '../config/firebase';
 import axios from 'axios';
 
+interface AuthRequest extends Request {
+  user?: {
+    userId: string;
+  };
+}
+
 interface FirebaseAuthResponse {
   localId: string;
   email: string;
@@ -34,7 +40,7 @@ export const register = async (req: Request, res: Response) => {
     const token = jwt.sign(
       { userId: userRecord.uid },
       process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
+      { expiresIn: '30d' }
     );
 
     res.status(201).json({
@@ -84,7 +90,7 @@ export const login = async (req: Request, res: Response) => {
       const token = jwt.sign(
         { userId: userRecord.uid },
         process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '24h' }
+        { expiresIn: '30d' }
       );
 
       res.json({
@@ -142,5 +148,36 @@ export const resetPassword = async (req: Request, res: Response) => {
     });
   } catch (error) {
     res.status(400).json({ message: 'Invalid or expired token' });
+  }
+};
+
+export const deleteAccount = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const { userId: requestedUserId } = req.body ?? {};
+    if (requestedUserId && requestedUserId !== userId) {
+      return res.status(403).json({ message: 'Cannot delete another user account' });
+    }
+
+    const profilesSnap = await admin.firestore()
+      .collection('WaterprintProfiles')
+      .where('userId', '==', userId)
+      .get();
+
+    const batch = admin.firestore().batch();
+    profilesSnap.docs.forEach((doc) => batch.delete(doc.ref));
+    batch.delete(admin.firestore().collection('users').doc(userId));
+    await batch.commit();
+
+    await admin.auth().deleteUser(userId);
+
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({ message: 'Failed to delete account' });
   }
 }; 

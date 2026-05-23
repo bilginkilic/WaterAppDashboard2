@@ -18,6 +18,29 @@ export const createInitialProfile = async (req: AuthRequest, res: Response) => {
     const { initialWaterprint, answers, correctAnswersCount } = req.body;
     const userId = req.user?.userId;
 
+    const existing = await admin.firestore()
+      .collection('WaterprintProfiles')
+      .where('userId', '==', userId)
+      .limit(1)
+      .get();
+
+    if (!existing.empty) {
+      const profileRef = existing.docs[0].ref;
+      await profileRef.update({
+        initialWaterprint,
+        currentWaterprint: initialWaterprint,
+        initialAssessment: {
+          answers,
+          correctAnswersCount,
+          date: admin.firestore.Timestamp.now(),
+        },
+      });
+      return res.status(200).json({
+        profileId: existing.docs[0].id,
+        message: 'Profil güncellendi',
+      });
+    }
+
     const profileData = {
       userId,
       initialWaterprint,
@@ -25,21 +48,79 @@ export const createInitialProfile = async (req: AuthRequest, res: Response) => {
       initialAssessment: {
         answers,
         correctAnswersCount,
-        date: admin.firestore.Timestamp.now()
+        date: admin.firestore.Timestamp.now(),
       },
       completedTasks: [],
       progressHistory: [{
         date: admin.firestore.Timestamp.now(),
-        waterprint: initialWaterprint
-      }]
+        waterprint: initialWaterprint,
+      }],
     };
 
     const profileRef = await admin.firestore().collection('WaterprintProfiles').add(profileData);
 
     res.status(201).json({
       profileId: profileRef.id,
-      message: 'Başlangıç profili oluşturuldu'
+      message: 'Başlangıç profili oluşturuldu',
     });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
+export const syncProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { initialWaterprint, currentWaterprint, answers, correctAnswersCount } = req.body;
+    const userId = req.user?.userId;
+
+    const existing = await admin.firestore()
+      .collection('WaterprintProfiles')
+      .where('userId', '==', userId)
+      .limit(1)
+      .get();
+
+    const now = admin.firestore.Timestamp.now();
+
+    if (existing.empty) {
+      const profileRef = await admin.firestore().collection('WaterprintProfiles').add({
+        userId,
+        initialWaterprint,
+        currentWaterprint,
+        initialAssessment: {
+          answers: answers || [],
+          correctAnswersCount: correctAnswersCount || 0,
+          date: now,
+        },
+        completedTasks: [],
+        progressHistory: [{ date: now, waterprint: currentWaterprint }],
+      });
+      return res.status(201).json({ profileId: profileRef.id, message: 'Profil oluşturuldu' });
+    }
+
+    const profileRef = existing.docs[0].ref;
+    const existingData = existing.docs[0].data();
+
+    await profileRef.update({
+      initialWaterprint,
+      currentWaterprint,
+      initialAssessment: {
+        answers: answers || existingData.initialAssessment?.answers || [],
+        correctAnswersCount:
+          correctAnswersCount ?? existingData.initialAssessment?.correctAnswersCount ?? 0,
+        date: existingData.initialAssessment?.date || now,
+      },
+      progressHistory: admin.firestore.FieldValue.arrayUnion({
+        date: now,
+        waterprint: currentWaterprint,
+      }),
+    });
+
+    res.json({ profileId: existing.docs[0].id, message: 'Profil senkronize edildi' });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
   }

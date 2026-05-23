@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:e2e": "playwright test",
+    "test:e2e:smoke": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test tests/playwright/smoke.spec.ts",
+    "test:e2e:challenge": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test tests/playwright/dashboard-challenge.spec.ts",
+    "test:orchestrate": "npm run test:e2e:smoke && npm run test:e2e:challenge"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",
@@ -37,6 +41,7 @@
   },
   "devDependencies": {
     "@netlify/plugin-nextjs": "^5.12.0",
+    "@playwright/test": "^1.60.0",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17"

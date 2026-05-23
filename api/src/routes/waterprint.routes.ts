@@ -1,6 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { createInitialProfile, updateWaterprint, getProgress } from '../controllers/waterprint.controller';
+import { createInitialProfile, updateWaterprint, getProgress, syncProfile } from '../controllers/waterprint.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = express.Router();
@@ -30,6 +30,19 @@ router.post('/update',
   ],
   (req: Request, res: Response) => {
     void updateWaterprint(req, res);
+  }
+);
+
+// Sync local mobile profile to dashboard (upsert)
+router.post('/sync',
+  [
+    body('initialWaterprint').isNumeric(),
+    body('currentWaterprint').isNumeric(),
+    body('answers').optional().isArray(),
+    body('correctAnswersCount').optional().isNumeric(),
+  ],
+  (req: Request, res: Response) => {
+    void syncProfile(req, res);
   }
 );
 

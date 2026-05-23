@@ -1,6 +1,7 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { body } from 'express-validator';
-import { register, login, forgotPassword, resetPassword } from '../controllers/auth.controller';
+import { register, login, forgotPassword, resetPassword, deleteAccount } from '../controllers/auth.controller';
+import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
@@ -45,6 +46,16 @@ router.post('/reset-password',
   ],
   (req: Request, res: Response) => {
     void resetPassword(req, res);
+  }
+);
+
+// Delete account route
+router.delete('/delete-account',
+  (req: Request, res: Response, next: NextFunction) => {
+    void authMiddleware(req, res, next);
+  },
+  (req: Request, res: Response) => {
+    void deleteAccount(req, res);
   }
 );
 

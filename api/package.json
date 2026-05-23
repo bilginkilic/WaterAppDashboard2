@@ -7,7 +7,9 @@
     "start": "node dist/index.js",
     "build": "tsc",
     "dev": "nodemon",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "seed:challenge": "ts-node src/scripts/seed-challenge-users.ts",
+    "test": "jest --passWithNoTests",
+    "test:integration": "jest tests/integration --passWithNoTests"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -39,8 +41,11 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/jsonwebtoken": "^9.0.9",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.13.11",
+    "jest": "^29.7.0",
     "nodemon": "^3.1.9",
+    "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   }
