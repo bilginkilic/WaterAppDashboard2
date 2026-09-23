@@ -98,6 +98,24 @@ Admin URL: your Netlify production URL from the site dashboard, path `/login`.
 
 Please contact the system administrator for access credentials.
 
+Admin login is checked on the server. The dashboard needs these Netlify environment variables (mark the password and secret as **secret**, with a value for the Production context). Redeploy after changing them, because Netlify reads them at deploy time:
+
+| Variable | Purpose |
+|---|---|
+| `ADMIN_EMAIL` | Admin login e-mail |
+| `ADMIN_PASSWORD` | Admin login password |
+| `ADMIN_SESSION_SECRET` | Signs the session cookie; at least 32 random characters (`openssl rand -base64 48`) |
+
+If any of them is missing, `/api/admin/login` returns `503`. Every `/api/admin/*` data route returns `401` without a valid session.
+
+### Organisation labels
+
+Users can be labelled **MUFG Turkey** or **MUFG London**. The label is stored in Firestore at `users/{uid}.organization`.
+
+- **Dashboard:** filter the user list by organisation, or change a user's label from the user detail dialog.
+- **API:** `POST /api/admin/users/organization` with `{ "userIds": [...], "organization": "MUFG Turkey" | "MUFG London" | null }` (admin session required).
+- **Bulk (by e-mail list):** `cd api && npx ts-node src/scripts/set-organization.ts --emails list.txt --org "MUFG Turkey" --rest "MUFG London"`. It is a dry run by default; add `--apply` to write.
+
 ## 📱 Related Applications
 
 - [WaterApp V2 iOS App](https://apps.apple.com/tr/app/waterapp-v2/id6745251786)
