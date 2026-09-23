@@ -34,8 +34,8 @@ This is the backend API for the WaterApp application, providing authentication a
    FIREBASE_SERVICE_ACCOUNT={"type":"service_account",...}
    
    # Admin credentials
-   ADMIN_EMAIL=admin@waterapp.com
-   ADMIN_PASSWORD=admin123
+   ADMIN_EMAIL=<admin e-posta>
+   ADMIN_PASSWORD=<güçlü bir şifre>
    ```
 
 4. Build the project:

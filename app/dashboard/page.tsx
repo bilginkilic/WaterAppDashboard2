@@ -42,18 +42,19 @@ function MobileHeroSavings() {
 }
 
 export default function DashboardPage() {
-  const { isAuthenticated, logout } = useAdmin();
+  const { isAuthenticated, isChecking, logout } = useAdmin();
   const { t } = useLanguage();
   const router = useRouter();
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
+    if (isChecking) return;
     if (!isAuthenticated) {
       router.push('/login');
     } else {
       setChecked(true);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, isChecking, router]);
 
   if (!checked) {
     return (
@@ -66,8 +67,8 @@ export default function DashboardPage() {
     );
   }
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.push('/login');
   };
 

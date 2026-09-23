@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ORGANIZATIONS } from '../../lib/organizations';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from './ui/table';
@@ -17,9 +18,30 @@ import { TrendingUp, Users, Droplet, Award, Calendar, Trophy, Target, BarChart3,
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDashboardStats, type DashboardUser } from '../contexts/DashboardStatsContext';
 
+const ORG_BADGE_CLASS: Record<string, string> = {
+  'MUFG Turkey': 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300',
+  'MUFG London': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-300',
+};
+
+function OrganizationBadge({ organization }: { organization: string | null }) {
+  if (!organization) return null;
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-medium ${ORG_BADGE_CLASS[organization] ?? 'bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-white/70'}`}
+    >
+      {organization}
+    </span>
+  );
+}
+
+const NO_ORG = '__none__';
+
 export default function UserList() {
-  const { users, stats, loading, error } = useDashboardStats();
+  const { users, stats, loading, error, refetch } = useDashboardStats();
   const [selectedUser, setSelectedUser] = useState<DashboardUser | null>(null);
+  const [orgFilter, setOrgFilter] = useState<string>('all');
+  const [savingOrg, setSavingOrg] = useState(false);
+  const [orgError, setOrgError] = useState<string | null>(null);
   const { t, lang } = useLanguage();
   const isDark = false;
   const dateLocale = lang === 'tr' ? tr : enUS;
@@ -80,6 +102,40 @@ export default function UserList() {
     )
     : 0;
   const topIndividual = stats.topImprovement[0];
+
+  const orgFilters = [
+    { value: 'all', label: t.allOrganizations, count: users.length },
+    ...ORGANIZATIONS.map((org) => ({
+      value: org as string,
+      label: org as string,
+      count: users.filter((u) => u.organization === org).length,
+    })),
+    { value: NO_ORG, label: t.noOrganization, count: users.filter((u) => !u.organization).length },
+  ];
+  const filteredUsers = users.filter((u) => {
+    if (orgFilter === 'all') return true;
+    if (orgFilter === NO_ORG) return !u.organization;
+    return u.organization === orgFilter;
+  });
+
+  const updateOrganization = async (user: DashboardUser, organization: string | null) => {
+    setSavingOrg(true);
+    setOrgError(null);
+    try {
+      const res = await fetch('/api/admin/users/organization', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: [user.id], organization }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      setSelectedUser({ ...user, organization });
+      refetch();
+    } catch {
+      setOrgError(t.organizationSaveError);
+    } finally {
+      setSavingOrg(false);
+    }
+  };
 
   const primaryCards = [
     { title: t.totalUsers, value: stats.total.userCount.toString(), subtitle: `${stats.total.activeUserCount} ${t.activeUsers}`, icon: Users },
@@ -258,7 +314,10 @@ export default function UserList() {
                       <div className="flex items-center gap-4">
                         <span className={`w-8 text-lg font-bold ${medals[index] || 'text-slate-400 dark:text-white/50'}`}>{index + 1}</span>
                         <div>
-                          <div className="font-medium text-slate-900 dark:text-white">{user.displayName || user.email}</div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium text-slate-900 dark:text-white">{user.displayName || user.email}</span>
+                            <OrganizationBadge organization={user.organization} />
+                          </div>
                           <div className="text-sm text-slate-500 dark:text-white/50">
                             {t.improvement}: <span className="font-medium text-slate-900 dark:text-white">{user.waterprint.improvement}%</span>
                           </div>
@@ -289,7 +348,10 @@ export default function UserList() {
                       <div className="flex items-center gap-4">
                         <span className={`w-8 text-lg font-bold ${medals[index] || 'text-slate-400 dark:text-white/50'}`}>{index + 1}</span>
                         <div>
-                          <div className="font-medium text-slate-900 dark:text-white">{user.displayName || user.email}</div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-medium text-slate-900 dark:text-white">{user.displayName || user.email}</span>
+                            <OrganizationBadge organization={user.organization} />
+                          </div>
                           <div className="text-sm text-slate-500 dark:text-white/50">
                             {t.initial}: <span className="font-medium text-slate-900 dark:text-white">{user.waterprint.initial?.toLocaleString(localeStr)} {t.ltPerDay}</span>
                           </div>
@@ -313,7 +375,22 @@ export default function UserList() {
                 <Users className="h-5 w-5 text-slate-500 dark:text-white/50" strokeWidth={1.5} />
                 {t.userList}
               </h3>
-              <span className="text-sm font-light text-slate-500 dark:text-white/40">{users.length} {t.totalUsers.toLowerCase()}</span>
+              <span className="text-sm font-light text-slate-500 dark:text-white/40">{filteredUsers.length} {t.totalUsers.toLowerCase()}</span>
+            </div>
+            <div className="flex flex-wrap gap-2 border-b border-slate-200 px-6 py-3 dark:border-white/10" role="group" aria-label={t.organization}>
+              {orgFilters.map((f) => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => setOrgFilter(f.value)}
+                  aria-pressed={orgFilter === f.value}
+                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${orgFilter === f.value
+                    ? 'bg-teal-600 text-white dark:bg-teal-500/90 dark:text-slate-950'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10'}`}
+                >
+                  {f.label} <span className="opacity-70">({f.count})</span>
+                </button>
+              ))}
             </div>
             <div className="overflow-x-auto">
               <Table>
@@ -328,7 +405,7 @@ export default function UserList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <TableRow
                       key={user.id}
                       className="cursor-pointer border-slate-200 transition-colors hover:bg-slate-50 dark:border-white/5 dark:hover:bg-white/5"
@@ -342,7 +419,10 @@ export default function UserList() {
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium text-slate-900 dark:text-white">{user.displayName || '—'}</div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-medium text-slate-900 dark:text-white">{user.displayName || '—'}</span>
+                              <OrganizationBadge organization={user.organization} />
+                            </div>
                             <div className="text-sm text-slate-500 dark:text-white/40">{user.email}</div>
                           </div>
                         </div>
@@ -383,7 +463,7 @@ export default function UserList() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+      <Dialog open={!!selectedUser} onOpenChange={(open) => { if (!open) { setSelectedUser(null); setOrgError(null); } }}>
         <DialogContent className="rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl sm:max-w-md dark:border-white/10 dark:bg-slate-900 dark:text-white [&>button]:rounded-lg [&>button]:text-slate-500 [&>button]:hover:bg-slate-100 dark:[&>button]:text-white dark:[&>button]:hover:bg-white/10">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-4 text-slate-900 dark:text-white">
@@ -401,6 +481,27 @@ export default function UserList() {
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4 pt-4">
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-100 p-4 dark:bg-white/5">
+                <label htmlFor="user-organization" className="text-xs uppercase tracking-wider text-slate-500 dark:text-white/40">
+                  {t.organization}
+                </label>
+                <select
+                  id="user-organization"
+                  value={selectedUser.organization ?? NO_ORG}
+                  disabled={savingOrg}
+                  onChange={(e) => {
+                    const value = e.target.value === NO_ORG ? null : e.target.value;
+                    void updateOrganization(selectedUser, value);
+                  }}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 disabled:opacity-60 dark:border-white/15 dark:bg-slate-800 dark:text-white"
+                >
+                  <option value={NO_ORG}>{t.noOrganization}</option>
+                  {ORGANIZATIONS.map((org) => (
+                    <option key={org} value={org}>{org}</option>
+                  ))}
+                </select>
+              </div>
+              {orgError && <p className="text-sm text-red-600 dark:text-red-400">{orgError}</p>}
               <div className="grid grid-cols-2 gap-4">
                 <div className="rounded-xl bg-slate-100 p-4 dark:bg-white/5">
                   <div className="mb-1 text-xs uppercase tracking-wider text-slate-500 dark:text-white/40">{t.initialFootprint}</div>

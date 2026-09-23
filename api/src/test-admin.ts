@@ -95,8 +95,7 @@ async function testAdminDashboard() {
 
     console.log('\nTest data created successfully!');
     console.log('\nYou can now test the admin dashboard with:');
-    console.log('username: admin');
-    console.log('password: admin123');
+    console.log('ADMIN_EMAIL / ADMIN_PASSWORD env değerleriyle giriş yapın.');
 
   } catch (error) {
     console.error('Error during testing:', error);

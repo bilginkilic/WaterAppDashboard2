@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@waterapp.com';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 interface AdminJwtPayload {
   email: string;
@@ -24,11 +24,9 @@ export const verifyAdminToken = async (
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as AdminJwtPayload;
 
-    if (!decoded.email || decoded.email !== ADMIN_EMAIL) {
+    if (!ADMIN_EMAIL || !decoded.email || decoded.email !== ADMIN_EMAIL) {
       res.status(403).json({
         message: 'Access denied. Admin privileges required.',
-        userEmail: decoded.email,
-        expectedEmail: ADMIN_EMAIL,
       });
       return;
     }

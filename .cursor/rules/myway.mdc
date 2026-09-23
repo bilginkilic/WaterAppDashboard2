@@ -6,9 +6,7 @@ alwaysApply: true
 
 # Your rule content
 
--  admin için kullanılan şifre admin123 login için kullanılacak isim ise admin@waterapp.com olacak ve
+-  admin girişi sunucuda doğrulanır: ADMIN_EMAIL / ADMIN_PASSWORD / ADMIN_SESSION_SECRET sadece env'de (Netlify) tutulur, koda veya repoya şifre yazılmaz ve
 - bu sayfadan apiden gelen bilgilerle kullanıcı listsesi ve en iyi iki kullanıcı tespit edilecek. en az su tüketen ve en iyi gelişim kaydeden. yani kısa zamanda su ayak izini en çok düşüren kişi.
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@waterapp.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 Admin login işlemi!
 Production login URL, Netlify site URL + /login (sabit domain repoda yazilmasin; env veya bilesik origin).
