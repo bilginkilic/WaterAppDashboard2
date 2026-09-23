@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useLanguage } from './LanguageContext';
+import { computeDashboardStats } from '../../lib/dashboardStats';
 
 export interface DailyUsage {
   date: string;
@@ -79,8 +80,17 @@ async function readAdminUsersError(response: Response): Promise<string> {
   }
 }
 
+/** 'all', bir kurum adı ya da etiketsizler için ORG_FILTER_NONE */
+export const ORG_FILTER_ALL = 'all';
+export const ORG_FILTER_NONE = '__none__';
+
 interface DashboardStatsContextType {
+  /** Seçili kurum filtresine göre kullanıcılar */
   users: DashboardUser[];
+  /** Filtrelenmemiş tüm kullanıcılar (filtre sayıları için) */
+  allUsers: DashboardUser[];
+  organizationFilter: string;
+  setOrganizationFilter: (value: string) => void;
   stats: DashboardStats | null;
   loading: boolean;
   error: string | null;
@@ -93,8 +103,9 @@ const DashboardStatsContext = createContext<DashboardStatsContextType | null>(nu
 
 export function DashboardStatsProvider({ children }: { children: ReactNode }) {
   const { t } = useLanguage();
-  const [users, setUsers] = useState<DashboardUser[]>([]);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [allUsers, setAllUsers] = useState<DashboardUser[]>([]);
+  const [hasData, setHasData] = useState(false);
+  const [organizationFilter, setOrganizationFilter] = useState<string>(ORG_FILTER_ALL);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
@@ -128,36 +139,14 @@ export function DashboardStatsProvider({ children }: { children: ReactNode }) {
           },
         }));
 
-        const serverStats = payload.stats || {
-          topImprovement: [],
-          bestInitial: [],
-          total: {
-            initialTotal: 0,
-            currentTotal: 0,
-            userCount: safeUsers.length,
-            activeUserCount: 0,
-          },
-          dailyData: [],
-        };
-
         if (cancelled) return;
-        setUsers(safeUsers);
-        setStats({
-          topImprovement: serverStats.topImprovement || [],
-          bestInitial: serverStats.bestInitial || [],
-          total: {
-            initialTotal: serverStats.total?.initialTotal || 0,
-            currentTotal: serverStats.total?.currentTotal || 0,
-            userCount: serverStats.total?.userCount ?? safeUsers.length,
-            activeUserCount: serverStats.total?.activeUserCount || 0,
-          },
-          dailyData: serverStats.dailyData || [],
-        });
+        setAllUsers(safeUsers);
+        setHasData(true);
       } catch (err) {
         if (cancelled) return;
         setError(err instanceof Error && err.message ? err.message : t.errorOccurred);
-        setUsers([]);
-        setStats(null);
+        setAllUsers([]);
+        setHasData(false);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -167,6 +156,17 @@ export function DashboardStatsProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [t.errorOccurred, version]);
+
+  const users = useMemo(() => {
+    if (organizationFilter === ORG_FILTER_ALL) return allUsers;
+    if (organizationFilter === ORG_FILTER_NONE) return allUsers.filter((u) => !u.organization);
+    return allUsers.filter((u) => u.organization === organizationFilter);
+  }, [allUsers, organizationFilter]);
+
+  const stats = useMemo<DashboardStats | null>(
+    () => (hasData ? computeDashboardStats(users) : null),
+    [hasData, users]
+  );
 
   const totalSavedLiters = useMemo(() => {
     if (!stats) return null;
@@ -179,13 +179,16 @@ export function DashboardStatsProvider({ children }: { children: ReactNode }) {
   const value = useMemo<DashboardStatsContextType>(
     () => ({
       users,
+      allUsers,
+      organizationFilter,
+      setOrganizationFilter,
       stats,
       loading,
       error,
       totalSavedLiters,
       refetch,
     }),
-    [users, stats, loading, error, totalSavedLiters, refetch]
+    [users, allUsers, organizationFilter, stats, loading, error, totalSavedLiters, refetch]
   );
 
   return (

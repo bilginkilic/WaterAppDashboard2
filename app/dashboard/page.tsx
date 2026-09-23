@@ -6,6 +6,7 @@ import { useAdmin } from '../contexts/AdminContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { DashboardStatsProvider, useDashboardStats } from '../contexts/DashboardStatsContext';
 import UserList from '../components/UserList';
+import OrganizationFilter from '../components/OrganizationFilter';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import { LogOut, Droplet } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -116,6 +117,7 @@ export default function DashboardPage() {
       <main className="px-4 pb-16 pt-20 sm:px-6 sm:pt-24">
         <div className="mx-auto max-w-7xl">
           <DashboardStatsProvider>
+            <OrganizationFilter />
             <section className="mb-6 md:mb-8">
               <div className="wa-hero-banner hidden md:block">
                 <Image

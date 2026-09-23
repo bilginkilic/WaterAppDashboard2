@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, isAuthenticated } = useAdmin();
+  const { login, isAuthenticated, isChecking } = useAdmin();
   const { t } = useLanguage();
   const router = useRouter();
 
@@ -119,7 +119,8 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              // Sayfa hydrate olup oturum kontrolü bitene kadar pasif; aksi halde form yerel olarak gönderilip sayfa yenileniyor.
+              disabled={loading || isChecking}
               className="group flex w-full items-center justify-center gap-3 rounded-xl bg-teal-600 px-6 py-3.5 text-base font-semibold text-white shadow-lg shadow-teal-600/20 transition hover:bg-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-400 disabled:cursor-not-allowed disabled:opacity-55 dark:shadow-teal-950/40"
             >
               {loading ? t.signingIn : t.signIn}
