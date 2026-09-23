@@ -39,7 +39,6 @@ const NO_ORG = '__none__';
 export default function UserList() {
   const { users, stats, loading, error, refetch } = useDashboardStats();
   const [selectedUser, setSelectedUser] = useState<DashboardUser | null>(null);
-  const [orgFilter, setOrgFilter] = useState<string>('all');
   const [savingOrg, setSavingOrg] = useState(false);
   const [orgError, setOrgError] = useState<string | null>(null);
   const { t, lang } = useLanguage();
@@ -102,21 +101,6 @@ export default function UserList() {
     )
     : 0;
   const topIndividual = stats.topImprovement[0];
-
-  const orgFilters = [
-    { value: 'all', label: t.allOrganizations, count: users.length },
-    ...ORGANIZATIONS.map((org) => ({
-      value: org as string,
-      label: org as string,
-      count: users.filter((u) => u.organization === org).length,
-    })),
-    { value: NO_ORG, label: t.noOrganization, count: users.filter((u) => !u.organization).length },
-  ];
-  const filteredUsers = users.filter((u) => {
-    if (orgFilter === 'all') return true;
-    if (orgFilter === NO_ORG) return !u.organization;
-    return u.organization === orgFilter;
-  });
 
   const updateOrganization = async (user: DashboardUser, organization: string | null) => {
     setSavingOrg(true);
@@ -375,22 +359,7 @@ export default function UserList() {
                 <Users className="h-5 w-5 text-slate-500 dark:text-white/50" strokeWidth={1.5} />
                 {t.userList}
               </h3>
-              <span className="text-sm font-light text-slate-500 dark:text-white/40">{filteredUsers.length} {t.totalUsers.toLowerCase()}</span>
-            </div>
-            <div className="flex flex-wrap gap-2 border-b border-slate-200 px-6 py-3 dark:border-white/10" role="group" aria-label={t.organization}>
-              {orgFilters.map((f) => (
-                <button
-                  key={f.value}
-                  type="button"
-                  onClick={() => setOrgFilter(f.value)}
-                  aria-pressed={orgFilter === f.value}
-                  className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${orgFilter === f.value
-                    ? 'bg-teal-600 text-white dark:bg-teal-500/90 dark:text-slate-950'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10'}`}
-                >
-                  {f.label} <span className="opacity-70">({f.count})</span>
-                </button>
-              ))}
+              <span className="text-sm font-light text-slate-500 dark:text-white/40">{users.length} {t.totalUsers.toLowerCase()}</span>
             </div>
             <div className="overflow-x-auto">
               <Table>
@@ -405,7 +374,7 @@ export default function UserList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
+                  {users.map((user) => (
                     <TableRow
                       key={user.id}
                       className="cursor-pointer border-slate-200 transition-colors hover:bg-slate-50 dark:border-white/5 dark:hover:bg-white/5"
