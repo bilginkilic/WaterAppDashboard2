@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { firebaseAdmin } from '../../../../lib/firebase';
 import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from '../../../../lib/adminSession';
+import { isOrganization } from '../../../../lib/organizations';
 import { format, subDays } from 'date-fns';
 
 export const runtime = 'nodejs';
@@ -47,6 +48,7 @@ interface UsersDoc {
   createdAt?: AnyDate;
   updatedAt?: AnyDate;
   lastLoginAt?: AnyDate;
+  organization?: string | null;
 }
 
 export async function GET(request: NextRequest) {
@@ -122,6 +124,7 @@ export async function GET(request: NextRequest) {
         id: uid,
         email: u.email ?? null,
         displayName: u.displayName ?? u.name ?? null,
+        organization: isOrganization(u.organization) ? u.organization : null,
         createdAt: toIsoString(u.createdAt) ?? new Date(0).toISOString(),
         lastLoginAt: toIsoString(u.lastLoginAt ?? u.updatedAt),
         waterprint: {
@@ -152,14 +155,23 @@ export async function GET(request: NextRequest) {
       const existingHasData = existing.waterprint.initial != null || existing.waterprint.current != null;
       const candidateHasData = u.waterprint.initial != null || u.waterprint.current != null;
       if (candidateHasData && !existingHasData) {
-        byEmail.set(key, { ...u, displayName: u.displayName ?? existing.displayName });
+        byEmail.set(key, {
+          ...u,
+          displayName: u.displayName ?? existing.displayName,
+          organization: u.organization ?? existing.organization,
+        });
       } else if (!candidateHasData && existingHasData) {
-        byEmail.set(key, { ...existing, displayName: existing.displayName ?? u.displayName });
+        byEmail.set(key, {
+          ...existing,
+          displayName: existing.displayName ?? u.displayName,
+          organization: existing.organization ?? u.organization,
+        });
       } else {
         byEmail.set(key, {
           ...existing,
           displayName: existing.displayName ?? u.displayName,
           lastLoginAt: existing.lastLoginAt ?? u.lastLoginAt,
+          organization: existing.organization ?? u.organization,
         });
       }
     }

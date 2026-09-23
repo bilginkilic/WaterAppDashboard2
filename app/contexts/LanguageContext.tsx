@@ -64,6 +64,10 @@ const translations = {
 
     // Table
     userList: 'User List',
+    organization: 'Organisation',
+    allOrganizations: 'All',
+    noOrganization: 'Untagged',
+    organizationSaveError: 'Could not update organisation.',
     user: 'User',
     initialFootprint: 'Initial Footprint',
     currentFootprint: 'Current Footprint',
@@ -137,6 +141,10 @@ const translations = {
 
     // Table
     userList: 'Kullanıcı Listesi',
+    organization: 'Kurum',
+    allOrganizations: 'Tümü',
+    noOrganization: 'Etiketsiz',
+    organizationSaveError: 'Kurum güncellenemedi.',
     user: 'Kullanıcı',
     initialFootprint: 'Başlangıç Su Ayak İzi',
     currentFootprint: 'Güncel Su Ayak İzi',

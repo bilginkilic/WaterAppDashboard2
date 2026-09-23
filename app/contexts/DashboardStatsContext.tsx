@@ -29,6 +29,7 @@ export interface DashboardUser {
   id: string;
   email: string | null;
   displayName: string | null;
+  organization: string | null;
   createdAt: string;
   lastLoginAt: string | null;
   waterprint: Waterprint;
@@ -105,7 +106,8 @@ export function DashboardStatsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      setLoading(true);
+      // Sadece ilk yüklemede iskelet göster; refetch mevcut ekranı (sekme, diyalog) korusun.
+      if (version === 0) setLoading(true);
       setError(null);
       try {
         const response = await fetch('/api/admin/users');
@@ -116,6 +118,7 @@ export function DashboardStatsProvider({ children }: { children: ReactNode }) {
 
         const safeUsers = (payload.users || []).map((u) => ({
           ...u,
+          organization: u.organization ?? null,
           waterprint: {
             initial: u.waterprint?.initial ?? null,
             current: u.waterprint?.current ?? null,
