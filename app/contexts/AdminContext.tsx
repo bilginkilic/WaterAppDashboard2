@@ -4,47 +4,71 @@ import { createContext, useContext, useState, useCallback, useEffect, ReactNode 
 
 interface AdminContextType {
   isAuthenticated: boolean;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  /** Sunucudaki oturum kontrolü bitene kadar true */
+  isChecking: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 const AdminContext = createContext<AdminContextType>({
   isAuthenticated: false,
-  login: () => false,
-  logout: () => {},
+  isChecking: true,
+  login: async () => false,
+  logout: async () => {},
 });
 
 export const useAdmin = () => useContext(AdminContext);
 
-const ADMIN_EMAIL = 'admin@waterapp.com';
-const ADMIN_PASSWORD = 'admin123';
-
+// Giriş bilgileri sunucuda (Netlify env) doğrulanır; oturum httpOnly çerezde tutulur.
 export function AdminProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (token === 'authenticated') {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  const login = useCallback((email: string, password: string): boolean => {
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      localStorage.setItem('adminToken', 'authenticated');
-      setIsAuthenticated(true);
-      return true;
-    }
-    return false;
-  }, []);
-
-  const logout = useCallback(() => {
+    // Eski istemci tarafı "token"ı artık kullanılmıyor.
     localStorage.removeItem('adminToken');
-    setIsAuthenticated(false);
+
+    let cancelled = false;
+    fetch('/api/admin/session', { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : { authenticated: false }))
+      .then((data: { authenticated?: boolean }) => {
+        if (!cancelled) setIsAuthenticated(Boolean(data.authenticated));
+      })
+      .catch(() => {
+        if (!cancelled) setIsAuthenticated(false);
+      })
+      .finally(() => {
+        if (!cancelled) setIsChecking(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      setIsAuthenticated(res.ok);
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } finally {
+      setIsAuthenticated(false);
+    }
   }, []);
 
   return (
-    <AdminContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AdminContext.Provider value={{ isAuthenticated, isChecking, login, logout }}>
       {children}
     </AdminContext.Provider>
   );

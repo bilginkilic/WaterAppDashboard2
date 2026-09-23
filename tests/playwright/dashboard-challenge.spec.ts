@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-const ADMIN_EMAIL = 'admin@waterapp.com';
-const ADMIN_PASSWORD = 'admin123';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? '';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? '';
 
 test.describe('Dashboard challenge visibility', () => {
   test.beforeEach(async ({ page }) => {

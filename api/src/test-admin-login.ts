@@ -10,8 +10,8 @@ async function testAdminLogin() {
     console.log('Testing admin login...');
     
     const response = await axios.post<LoginResponse>('http://localhost:3000/api/admin/login', {
-      username: 'admin',
-      password: 'admin123'
+      email: process.env.ADMIN_EMAIL,
+      password: process.env.ADMIN_PASSWORD
     });
 
     console.log('Login successful!');

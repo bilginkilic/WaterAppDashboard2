@@ -13,14 +13,18 @@ interface UserData {
   waterprintData?: WaterprintProfile[];
 }
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@waterapp.com';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const adminLogin = async (req: Request, res: Response) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
+  }
+
+  if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
+    return res.status(503).json({ message: 'Admin girişi yapılandırılmamış' });
   }
 
   const { email, password } = req.body;

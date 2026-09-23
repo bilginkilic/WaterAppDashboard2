@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { firebaseAdmin } from '../../../../lib/firebase';
+import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from '../../../../lib/adminSession';
 import { format, subDays } from 'date-fns';
 
 export const runtime = 'nodejs';
@@ -48,7 +49,11 @@ interface UsersDoc {
   lastLoginAt?: AnyDate;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!verifyAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE)?.value)) {
+    return NextResponse.json({ message: 'Yetkisiz' }, { status: 401 });
+  }
+
   try {
     const db = firebaseAdmin.firestore();
 
