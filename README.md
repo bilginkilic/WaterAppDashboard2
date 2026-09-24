@@ -116,6 +116,18 @@ Users can be labelled **MUFG Turkey** or **MUFG London**. The label is stored in
 - **API:** `POST /api/admin/users/organization` with `{ "userIds": [...], "organization": "MUFG Turkey" | "MUFG London" | null }` (admin session required).
 - **Bulk (by e-mail list):** `cd api && npx ts-node src/scripts/set-organization.ts --emails list.txt --org "MUFG Turkey" --rest "MUFG London"`. It is a dry run by default; add `--apply` to write.
 
+## 📲 Download page
+
+`/download` is public and meant for posters and slides. The printable QR code is `public/qr/download.png`.
+
+- **iPhone:** App Store button and a QR code.
+- **Android:** the app is in closed testing, so participants send their name and the Google account e-mail used on their phone.
+  - Each request is stored in Firestore `androidTesterRequests`, with the organisation set to **MUFG Turkey**.
+  - Requests appear in the dashboard under **Android requests**.
+  - The form also submits to the Netlify form `android-tester` (defined in `public/__forms.html`). Turn on e-mail alerts in Netlify → Forms → Form notifications. Form detection must be enabled on the site.
+- **Workflow:** add each e-mail to the "ldn" testers list in Play Console, then mark the request as added.
+- **QR codes:** regenerate with `npm run generate:qr` (set `SITE_URL` for another domain).
+
 ## 📱 Related Applications
 
 - [WaterApp V2 iOS App](https://apps.apple.com/tr/app/waterapp-v2/id6745251786)
