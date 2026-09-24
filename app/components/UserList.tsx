@@ -41,6 +41,8 @@ export default function UserList() {
   const [selectedUser, setSelectedUser] = useState<DashboardUser | null>(null);
   const [savingOrg, setSavingOrg] = useState(false);
   const [orgError, setOrgError] = useState<string | null>(null);
+  const [resetting, setResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const { t, lang } = useLanguage();
   const isDark = false;
   const dateLocale = lang === 'tr' ? tr : enUS;
@@ -101,6 +103,30 @@ export default function UserList() {
     )
     : 0;
   const topIndividual = stats.topImprovement[0];
+
+  const resetUserData = async (user: DashboardUser) => {
+    if (!window.confirm(t.resetUserDataConfirm)) return;
+    setResetting(true);
+    setResetMessage(null);
+    try {
+      const res = await fetch('/api/admin/users/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      setSelectedUser({
+        ...user,
+        waterprint: { initial: null, current: null, startDate: null, improvement: null, dailyUsage: [] },
+      });
+      setResetMessage(t.resetUserDataDone);
+      refetch();
+    } catch {
+      setResetMessage(t.resetUserDataError);
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const updateOrganization = async (user: DashboardUser, organization: string | null) => {
     setSavingOrg(true);
@@ -432,7 +458,7 @@ export default function UserList() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={!!selectedUser} onOpenChange={(open) => { if (!open) { setSelectedUser(null); setOrgError(null); } }}>
+      <Dialog open={!!selectedUser} onOpenChange={(open) => { if (!open) { setSelectedUser(null); setOrgError(null); setResetMessage(null); } }}>
         <DialogContent className="rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-2xl sm:max-w-md dark:border-white/10 dark:bg-slate-900 dark:text-white [&>button]:rounded-lg [&>button]:text-slate-500 [&>button]:hover:bg-slate-100 dark:[&>button]:text-white dark:[&>button]:hover:bg-white/10">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-4 text-slate-900 dark:text-white">
@@ -509,6 +535,17 @@ export default function UserList() {
                 {t.lastLogin}: {selectedUser.lastLoginAt
                   ? format(new Date(selectedUser.lastLoginAt), 'd MMM yyyy HH:mm', { locale: dateLocale })
                   : '—'}
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-white/10">
+                <span className="text-sm text-slate-500 dark:text-white/50" role="status">{resetMessage}</span>
+                <button
+                  type="button"
+                  onClick={() => void resetUserData(selectedUser)}
+                  disabled={resetting}
+                  className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"
+                >
+                  {t.resetUserData}
+                </button>
               </div>
             </div>
           )}
