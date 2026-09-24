@@ -3,7 +3,10 @@ import { test, expect } from '@playwright/test';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? '';
 
+// Live, read-only: logs in with ADMIN_EMAIL / ADMIN_PASSWORD and only reads data.
 test.describe('Dashboard challenge visibility', () => {
+  test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, 'Set ADMIN_EMAIL and ADMIN_PASSWORD to run');
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
     await page.locator('input[type="email"]').fill(ADMIN_EMAIL);
@@ -20,16 +23,18 @@ test.describe('Dashboard challenge visibility', () => {
     await expect(cards.first().or(table.first()).or(noData.first())).toBeVisible({ timeout: 20_000 });
   });
 
-  test('admin users API returns JSON with users array', async ({ request }) => {
-    const res = await request.get('/api/admin/users');
-    expect(res.status()).toBeLessThan(500);
+  test('organisation filter is shown above the dashboard', async ({ page }) => {
+    const filter = page.getByRole('group', { name: /organisation|kurum/i });
+    await expect(filter).toBeVisible({ timeout: 20_000 });
+    await expect(filter.getByRole('button', { name: /^(all|tümü)/i })).toBeVisible();
+  });
+
+  test('admin users API returns users for the logged-in admin', async ({ page }) => {
+    // page.request shares the admin session cookie set by the login above.
+    const res = await page.request.get('/api/admin/users');
+    expect(res.status()).toBe(200);
     const body = await res.json();
-    if (res.ok()) {
-      expect(Array.isArray(body.users)).toBe(true);
-      expect(body.stats).toBeTruthy();
-      expect(typeof body.stats.total.userCount).toBe('number');
-    } else {
-      expect(body.error || body.detail).toBeTruthy();
-    }
+    expect(Array.isArray(body.users)).toBe(true);
+    expect(typeof body.stats.total.userCount).toBe('number');
   });
 });
