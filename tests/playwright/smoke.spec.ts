@@ -61,3 +61,35 @@ test.describe('Admin API requires a session', () => {
     expect(res.headers()['set-cookie'] ?? '').not.toContain('wa_admin_session');
   });
 });
+
+test.describe('Public download page', () => {
+  test('is public and shows iOS and Android sections', async ({ page }) => {
+    await page.goto('/download');
+    await expect(page).toHaveURL(/\/download/);
+    await expect(page.locator('a[href*="apps.apple.com"]')).toBeVisible();
+    await expect(page.locator('#android form')).toBeVisible();
+  });
+
+  test('QR code images are served', async ({ request }) => {
+    for (const path of ['/qr/ios.svg', '/qr/android.svg', '/qr/download.svg', '/qr/download.png']) {
+      const res = await request.get(path);
+      expect(res.status(), path).toBe(200);
+    }
+  });
+
+  test('Netlify form definition is served', async ({ request }) => {
+    const res = await request.get('/__forms.html');
+    expect(res.status()).toBe(200);
+    expect(await res.text()).toContain('name="android-tester"');
+  });
+
+  test('Android request rejects invalid input without saving', async ({ request }) => {
+    const res = await request.post('/api/android-requests', { data: { name: 'x', email: 'not-an-email' } });
+    expect(res.status()).toBe(400);
+  });
+
+  test('Android request list is not public', async ({ request }) => {
+    const res = await request.get('/api/admin/android-requests');
+    expect(res.status()).toBe(401);
+  });
+});

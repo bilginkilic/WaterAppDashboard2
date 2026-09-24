@@ -14,9 +14,10 @@ import {
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { enUS, tr } from 'date-fns/locale';
-import { TrendingUp, Users, Droplet, Award, Calendar, Trophy, Target, BarChart3, Gauge, Leaf, CalendarClock, Flame } from 'lucide-react';
+import { Smartphone, TrendingUp, Users, Droplet, Award, Calendar, Trophy, Target, BarChart3, Gauge, Leaf, CalendarClock, Flame } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDashboardStats, type DashboardUser } from '../contexts/DashboardStatsContext';
+import AndroidRequests, { useAndroidRequests } from './AndroidRequests';
 
 const ORG_BADGE_CLASS: Record<string, string> = {
   'MUFG Turkey': 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300',
@@ -42,6 +43,8 @@ export default function UserList() {
   const [savingOrg, setSavingOrg] = useState(false);
   const [orgError, setOrgError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
+  const androidRequests = useAndroidRequests();
+  const pendingAndroid = androidRequests.requests.filter((r) => r.status === 'new').length;
   const [resetMessage, setResetMessage] = useState<string | null>(null);
   const { t, lang } = useLanguage();
   const isDark = false;
@@ -253,6 +256,16 @@ export default function UserList() {
             <Users className="mr-2 h-4 w-4" strokeWidth={1.5} />
             {t.tabUsers}
           </TabsTrigger>
+          <TabsTrigger
+            value="android"
+            className="rounded-lg px-6 text-sm font-medium transition-all data-[state=active]:bg-teal-600 data-[state=active]:text-white data-[state=inactive]:text-slate-600 dark:data-[state=active]:bg-teal-500/90 dark:data-[state=active]:text-slate-950 dark:data-[state=inactive]:text-slate-300"
+          >
+            <Smartphone className="mr-2 h-4 w-4" strokeWidth={1.5} />
+            {t.tabAndroidRequests}
+            {pendingAndroid > 0 && (
+              <span className="ml-2 rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">{pendingAndroid}</span>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-0 space-y-6">
@@ -455,6 +468,9 @@ export default function UserList() {
               </Table>
             </div>
           </div>
+        </TabsContent>
+        <TabsContent value="android" className="mt-0">
+          <AndroidRequests data={androidRequests} />
         </TabsContent>
       </Tabs>
 
