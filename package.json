@@ -10,6 +10,7 @@
     "test:e2e": "playwright test",
     "test:e2e:smoke": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test tests/playwright/smoke.spec.ts",
     "test:e2e:challenge": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test tests/playwright/dashboard-challenge.spec.ts",
+    "test:e2e:mocked": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test tests/playwright/dashboard-mocked.spec.ts",
     "test:orchestrate": "npm run test:e2e:smoke && npm run test:e2e:challenge"
   },
   "dependencies": {
