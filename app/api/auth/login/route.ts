@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Login error:', error);
     
-    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+    // Newer Firebase SDKs report every bad email/password as auth/invalid-credential.
+    if (['auth/user-not-found', 'auth/wrong-password', 'auth/invalid-credential', 'auth/invalid-email'].includes(error.code)) {
       return NextResponse.json(
         { message: 'Geçersiz email veya şifre' },
         { status: 401 }
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: 'Giriş yapılamadı', error: error.message },
+      { message: 'Giriş yapılamadı' },
       { status: 500 }
     );
   }

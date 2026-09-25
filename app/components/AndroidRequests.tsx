@@ -19,6 +19,7 @@ export interface AndroidRequest {
 export function useAndroidRequests() {
   const [requests, setRequests] = useState<AndroidRequest[]>([]);
   const [error, setError] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -36,21 +37,31 @@ export function useAndroidRequests() {
   }, [load]);
 
   const setStatus = useCallback(async (id: string, status: AndroidRequest['status']) => {
-    setRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+    let previous: AndroidRequest['status'] | undefined;
+    setRequests((prev) => prev.map((r) => {
+      if (r.id !== id) return r;
+      previous = r.status;
+      return { ...r, status };
+    }));
+    setSaveError(false);
     const res = await fetch('/api/admin/android-requests', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status }),
     }).catch(() => null);
-    if (!res?.ok) void load();
-  }, [load]);
+    if (!res?.ok) {
+      // Undo the optimistic change and tell the admin it was not saved.
+      setRequests((prev) => prev.map((r) => (r.id === id && previous ? { ...r, status: previous } : r)));
+      setSaveError(true);
+    }
+  }, []);
 
-  return { requests, error, setStatus };
+  return { requests, error, saveError, setStatus };
 }
 
 export default function AndroidRequests({ data }: { data: ReturnType<typeof useAndroidRequests> }) {
   const { t, lang } = useLanguage();
-  const { requests, error, setStatus } = data;
+  const { requests, error, saveError, setStatus } = data;
   const dateLocale = lang === 'tr' ? tr : enUS;
 
   return (
@@ -61,6 +72,9 @@ export default function AndroidRequests({ data }: { data: ReturnType<typeof useA
           {t.tabAndroidRequests}
         </h3>
         <p className="mt-1 text-sm text-slate-500">{t.arHint}</p>
+        {saveError && (
+          <p role="alert" className="mt-2 text-sm text-red-600">{t.arSaveError}</p>
+        )}
       </div>
       {error ? (
         <p className="p-8 text-center text-sm text-red-600">{t.errorOccurred}</p>

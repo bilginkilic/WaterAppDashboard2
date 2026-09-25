@@ -1,0 +1,98 @@
+{
+  "_comment": "Exact /waterprint/sync body the mobile app sends (WaterAppDaily syncService + normalizeSurveyAnswers) for the 'needsImprovement' persona. Regenerate if the app's questions change.",
+  "initialWaterprint": 20996,
+  "currentWaterprint": 20996,
+  "correctAnswersCount": 0,
+  "answers": [
+    {
+      "questionId": 1,
+      "answer": "No",
+      "valueTotal": 126,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "dishwashing",
+      "timestamp": "2026-09-25T10:00:00.000Z"
+    },
+    {
+      "questionId": 2,
+      "answer": "Yes",
+      "valueTotal": 36,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "dishwashing",
+      "timestamp": "2026-09-25T10:00:01.000Z"
+    },
+    {
+      "questionId": 3,
+      "answer": "Half full",
+      "valueTotal": 22,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "dishwashing",
+      "timestamp": "2026-09-25T10:00:02.000Z"
+    },
+    {
+      "questionId": 4,
+      "answer": "No",
+      "valueTotal": 120,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "plumbing",
+      "timestamp": "2026-09-25T10:00:03.000Z"
+    },
+    {
+      "questionId": 5,
+      "answer": "11 - 15 mins",
+      "valueTotal": 250,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "shower",
+      "timestamp": "2026-09-25T10:00:04.000Z"
+    },
+    {
+      "questionId": 6,
+      "answer": "Half full",
+      "valueTotal": 180,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "laundry",
+      "timestamp": "2026-09-25T10:00:05.000Z"
+    },
+    {
+      "questionId": 7,
+      "answer": "No",
+      "valueTotal": 12,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "daily",
+      "timestamp": "2026-09-25T10:00:06.000Z"
+    },
+    {
+      "questionId": 8,
+      "answer": "No",
+      "valueTotal": 10050,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "appliances",
+      "timestamp": "2026-09-25T10:00:07.000Z"
+    },
+    {
+      "questionId": 9,
+      "answer": "Yourself",
+      "valueTotal": 200,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "car",
+      "timestamp": "2026-09-25T10:00:08.000Z"
+    },
+    {
+      "questionId": 10,
+      "answer": "No",
+      "valueTotal": 10000,
+      "valueSaving": 0,
+      "type": "Task",
+      "category": "garden",
+      "timestamp": "2026-09-25T10:00:09.000Z"
+    }
+  ]
+}

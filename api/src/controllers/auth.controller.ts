@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { admin } from '../config/firebase';
-import axios from 'axios';
+import { admin, signInWithPassword } from '../config/firebase';
+import { getJwtSecret } from '../config/jwt';
 
 interface AuthRequest extends Request {
   user?: {
@@ -11,14 +10,12 @@ interface AuthRequest extends Request {
   };
 }
 
-interface FirebaseAuthResponse {
-  localId: string;
-  email: string;
-  displayName?: string;
-  idToken: string;
-  registered: boolean;
-  refreshToken: string;
-  expiresIn: string;
+const signUserToken = (userId: string) =>
+  jwt.sign({ userId }, getJwtSecret(), { expiresIn: '30d' });
+
+/** Keeps users/{uid} filled so the dashboard can show email and name without Auth. */
+async function upsertUserDoc(uid: string, fields: Record<string, unknown>) {
+  await admin.firestore().collection('users').doc(uid).set(fields, { merge: true });
 }
 
 export const register = async (req: Request, res: Response) => {
@@ -30,26 +27,33 @@ export const register = async (req: Request, res: Response) => {
 
     const { email, password, name } = req.body;
 
-    // Create user in Firebase Auth
-    const userRecord = await admin.auth().createUser({
-      email,
-      password,
-      displayName: name
-    });
+    let userRecord;
+    try {
+      userRecord = await admin.auth().createUser({ email, password, displayName: name });
+    } catch (error) {
+      if ((error as { code?: string })?.code === 'auth/email-already-exists') {
+        return res.status(409).json({ message: 'Email already registered' });
+      }
+      throw error;
+    }
 
-    const token = jwt.sign(
-      { userId: userRecord.uid },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '30d' }
-    );
+    const now = new Date().toISOString();
+    await upsertUserDoc(userRecord.uid, {
+      email,
+      name,
+      displayName: name,
+      createdAt: now,
+      lastLoginAt: now,
+    });
 
     res.status(201).json({
       userId: userRecord.uid,
-      token,
+      token: signUserToken(userRecord.uid),
       message: 'Kayıt başarılı'
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.error('Register error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -62,47 +66,23 @@ export const login = async (req: Request, res: Response) => {
 
     const { email, password } = req.body;
 
-    try {
-      // Get Firebase Web API Key from environment variable
-      const apiKey = process.env.FIREBASE_WEB_API_KEY;
-      if (!apiKey) {
-        throw new Error('Firebase Web API Key is not configured');
-      }
-
-      // Sign in with Firebase Auth REST API
-      const signInResponse = await axios.post<FirebaseAuthResponse>(
-        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
-        {
-          email,
-          password,
-          returnSecureToken: true
-        }
-      );
-
-      if (!signInResponse.data || !signInResponse.data.localId) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-      }
-
-      // Get user details
-      const userRecord = await admin.auth().getUser(signInResponse.data.localId);
-      
-      // Generate JWT token
-      const token = jwt.sign(
-        { userId: userRecord.uid },
-        process.env.JWT_SECRET || 'your-secret-key',
-        { expiresIn: '30d' }
-      );
-
-      res.json({
-        userId: userRecord.uid,
-        token,
-        name: userRecord.displayName
-      });
-    } catch (error) {
-      // Firebase Authentication error
-      console.error('Auth error:', error);
+    const uid = await signInWithPassword(email, password);
+    if (!uid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
+
+    const userRecord = await admin.auth().getUser(uid);
+    await upsertUserDoc(uid, {
+      email: userRecord.email || email,
+      ...(userRecord.displayName ? { name: userRecord.displayName, displayName: userRecord.displayName } : {}),
+      lastLoginAt: new Date().toISOString(),
+    });
+
+    res.json({
+      userId: userRecord.uid,
+      token: signUserToken(userRecord.uid),
+      name: userRecord.displayName
+    });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -125,30 +105,17 @@ export const forgotPassword = async (req: Request, res: Response) => {
       message: 'Şifre sıfırlama bağlantısı e-posta adresinize gönderildi'
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-export const resetPassword = async (req: Request, res: Response) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { token, newPassword } = req.body;
-
-    // Update password through Firebase
-    await admin.auth().updateUser(token, {
-      password: newPassword
-    });
-
-    res.json({
-      message: 'Şifre başarıyla güncellendi'
-    });
-  } catch (error) {
-    res.status(400).json({ message: 'Invalid or expired token' });
-  }
+/**
+ * Password resets go through Firebase's own emailed link. This endpoint used to
+ * treat the "token" as a uid, which let anyone set any user's password.
+ */
+export const resetPassword = async (_req: Request, res: Response) => {
+  res.status(410).json({ message: 'Use the password reset link sent by e-mail' });
 };
 
 export const deleteAccount = async (req: AuthRequest, res: Response) => {
@@ -163,14 +130,16 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ message: 'Cannot delete another user account' });
     }
 
-    const profilesSnap = await admin.firestore()
-      .collection('WaterprintProfiles')
-      .where('userId', '==', userId)
-      .get();
+    const db = admin.firestore();
+    const [profilesSnap, waterprintsSnap] = await Promise.all([
+      db.collection('WaterprintProfiles').where('userId', '==', userId).get(),
+      db.collection('waterprints').where('userId', '==', userId).get(),
+    ]);
 
-    const batch = admin.firestore().batch();
+    const batch = db.batch();
     profilesSnap.docs.forEach((doc) => batch.delete(doc.ref));
-    batch.delete(admin.firestore().collection('users').doc(userId));
+    waterprintsSnap.docs.forEach((doc) => batch.delete(doc.ref));
+    batch.delete(db.collection('users').doc(userId));
     await batch.commit();
 
     await admin.auth().deleteUser(userId);
@@ -180,4 +149,4 @@ export const deleteAccount = async (req: AuthRequest, res: Response) => {
     console.error('Delete account error:', error);
     res.status(500).json({ message: 'Failed to delete account' });
   }
-}; 
+};

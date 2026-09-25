@@ -13,6 +13,7 @@
 import '../load-env';
 import { readFileSync } from 'fs';
 import { admin } from '../config/firebase';
+import type { auth } from 'firebase-admin';
 
 const ORGANIZATIONS = ['MUFG Turkey', 'MUFG London'];
 
@@ -22,7 +23,7 @@ function arg(name: string): string | undefined {
 }
 
 async function listAllAuthUsers() {
-  const users: admin.auth.UserRecord[] = [];
+  const users: auth.UserRecord[] = [];
   let pageToken: string | undefined;
   do {
     const page = await admin.auth().listUsers(1000, pageToken);

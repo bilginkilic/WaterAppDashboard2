@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { firebaseAdmin } from '../config/firebase';
+import { getJwtSecret } from '../config/jwt';
 import { WaterprintProfile } from '../types/waterprint';
 
 interface UserData {
@@ -13,9 +14,6 @@ interface UserData {
   waterprintData?: WaterprintProfile[];
 }
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const adminLogin = async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -23,6 +21,8 @@ export const adminLogin = async (req: Request, res: Response) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
+  const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
   if (!ADMIN_EMAIL || !ADMIN_PASSWORD) {
     return res.status(503).json({ message: 'Admin girişi yapılandırılmamış' });
   }
@@ -35,7 +35,7 @@ export const adminLogin = async (req: Request, res: Response) => {
 
   const token = jwt.sign(
     { email, isAdmin: true },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: '24h' }
   );
 
@@ -91,7 +91,7 @@ export const getUserList = async (req: Request, res: Response) => {
     res.json(usersWithData);
   } catch (error) {
     console.error('Error fetching user list:', error);
-    res.status(500).json({ message: 'Error fetching user list', error });
+    res.status(500).json({ message: 'Error fetching user list' });
   }
 };
 

@@ -12,7 +12,11 @@
     "test:e2e:challenge": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test tests/playwright/dashboard-challenge.spec.ts",
     "test:e2e:mocked": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test tests/playwright/dashboard-mocked.spec.ts",
     "generate:qr": "node scripts/generate-qr.mjs",
-    "test:orchestrate": "npm run test:e2e:smoke && npm run test:e2e:challenge"
+    "test:orchestrate": "npm run test:e2e:smoke && npm run test:e2e:challenge",
+    "test:unit": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test --project=unit",
+    "test:api": "npm --prefix api run test:api",
+    "test:e2e:local": "PLAYWRIGHT_SKIP_WEBSERVER=1 playwright test --project=chromium tests/playwright/e2e-local.spec.ts",
+    "test:integrity": "node tests/integrity/live-integrity.mjs"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

@@ -2,10 +2,14 @@ import { test, expect } from '@playwright/test';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? '';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? '';
+const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
+// Needs real Firebase data: runs against a deployed site, or locally with LIVE_FIREBASE=1.
+const hasLiveData = !/localhost|127\.0\.0\.1/.test(new URL(baseURL).hostname) || process.env.LIVE_FIREBASE === '1';
 
 // Live, read-only: logs in with ADMIN_EMAIL / ADMIN_PASSWORD and only reads data.
 test.describe('Dashboard challenge visibility', () => {
   test.skip(!ADMIN_EMAIL || !ADMIN_PASSWORD, 'Set ADMIN_EMAIL and ADMIN_PASSWORD to run');
+  test.skip(!hasLiveData, 'Live Firebase only: set PLAYWRIGHT_BASE_URL to a deployed site or LIVE_FIREBASE=1');
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
