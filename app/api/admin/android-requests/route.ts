@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { firebaseAdmin } from '../../../../lib/firebase';
 import { ADMIN_SESSION_COOKIE, verifyAdminSessionToken } from '../../../../lib/adminSession';
+import { toIsoString, type AnyDate } from '../../../../lib/footprint';
 import { ANDROID_REQUESTS_COLLECTION, ANDROID_REQUEST_STATUSES } from '../../../../lib/androidRequests';
 
 export const runtime = 'nodejs';
@@ -10,10 +11,8 @@ function isAdmin(request: NextRequest) {
   return verifyAdminSessionToken(request.cookies.get(ADMIN_SESSION_COOKIE)?.value);
 }
 
-function toIso(value: unknown): string | null {
-  const ts = value as { toDate?: () => Date } | null;
-  return ts && typeof ts.toDate === 'function' ? ts.toDate().toISOString() : null;
-}
+// Accepts Firestore Timestamps as well as ISO strings / Dates written by scripts.
+const toIso = (value: unknown) => toIsoString(value as AnyDate);
 
 /** Android kapalı test başvuruları, en yeni önce. */
 export async function GET(request: NextRequest) {

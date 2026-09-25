@@ -5,4 +5,5 @@ module.exports = {
   testMatch: ['**/*.test.ts'],
   testTimeout: 30000,
   clearMocks: true,
+  setupFiles: ['<rootDir>/tests/setup-env.ts'],
 };

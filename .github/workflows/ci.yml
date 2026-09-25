@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  api:
+    name: API (typecheck + tests)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit -p .
+      - run: npm run test:api
+
+  web:
+    name: Dashboard (unit, smoke, mocked, e2e)
+    runs-on: ubuntu-latest
+    env:
+      ADMIN_EMAIL: ci@waterapp.test
+      ADMIN_PASSWORD: ci-admin-password
+      ADMIN_SESSION_SECRET: ci-session-secret-at-least-32-characters
+      E2E_API_URL: http://localhost:3001
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            api/package-lock.json
+      - run: npm ci
+      - run: npm ci
+        working-directory: api
+      - run: npx tsc --noEmit -p .
+      - run: npm run test:unit
+      - run: npx playwright install --with-deps chromium
+      - name: Start API with in-memory Firebase
+        run: (cd api && npm run e2e:server > ../e2e-api.log 2>&1 &) && npx wait-on -t 60000 http://localhost:3001/api/health
+      - name: Start dashboard
+        run: (npm run dev > next.log 2>&1 &) && npx wait-on -t 120000 http://localhost:3000/login
+      - name: Playwright (smoke, mocked, mobile → API → dashboard)
+        run: PLAYWRIGHT_SKIP_WEBSERVER=1 npx playwright test --project=chromium
+      - if: failure()
+        run: tail -n 100 e2e-api.log next.log

@@ -5,7 +5,6 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000';
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
 
 export default defineConfig({
-  testDir: './tests/playwright',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -17,8 +16,11 @@ export default defineConfig({
     ignoreHTTPSErrors: baseURL.startsWith('https://'),
   },
   projects: [
+    // Pure logic tests (lib/*): no browser, no server.
+    { name: 'unit', testDir: './tests/unit' },
     {
       name: 'chromium',
+      testDir: './tests/playwright',
       use: { ...devices['Desktop Chrome'], launchOptions: executablePath ? { executablePath } : {} },
     },
   ],

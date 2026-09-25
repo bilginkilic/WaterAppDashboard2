@@ -8,6 +8,19 @@ interface AuthRequest extends Request {
   };
 }
 
+const profiles = () => admin.firestore().collection('WaterprintProfiles');
+
+async function findProfile(userId: string) {
+  const snap = await profiles().where('userId', '==', userId).limit(1).get();
+  return snap.empty ? null : snap.docs[0];
+}
+
+/** Non-negative finite number, or null. */
+function footprintValue(value: unknown): number | null {
+  const n = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+  return typeof n === 'number' && Number.isFinite(n) && n >= 0 ? n : null;
+}
+
 export const createInitialProfile = async (req: AuthRequest, res: Response) => {
   try {
     const errors = validationResult(req);
@@ -15,56 +28,41 @@ export const createInitialProfile = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { initialWaterprint, answers, correctAnswersCount } = req.body;
-    const userId = req.user?.userId;
+    const { answers, correctAnswersCount } = req.body;
+    const initialWaterprint = footprintValue(req.body.initialWaterprint);
+    if (initialWaterprint === null) {
+      return res.status(400).json({ message: 'initialWaterprint must be a non-negative number' });
+    }
+    const userId = req.user!.userId;
+    const now = admin.firestore.Timestamp.now();
+    const initialAssessment = { answers, correctAnswersCount, date: now };
 
-    const existing = await admin.firestore()
-      .collection('WaterprintProfiles')
-      .where('userId', '==', userId)
-      .limit(1)
-      .get();
-
-    if (!existing.empty) {
-      const profileRef = existing.docs[0].ref;
-      await profileRef.update({
+    const existing = await findProfile(userId);
+    if (existing) {
+      await existing.ref.update({
         initialWaterprint,
         currentWaterprint: initialWaterprint,
-        initialAssessment: {
-          answers,
-          correctAnswersCount,
-          date: admin.firestore.Timestamp.now(),
-        },
+        initialAssessment,
+        completedTasks: [],
+        progressHistory: [{ date: now, waterprint: initialWaterprint }],
       });
-      return res.status(200).json({
-        profileId: existing.docs[0].id,
-        message: 'Profil güncellendi',
-      });
+      return res.status(200).json({ profileId: existing.id, message: 'Profil güncellendi' });
     }
 
-    const profileData = {
+    const profileRef = await profiles().add({
       userId,
       initialWaterprint,
       currentWaterprint: initialWaterprint,
-      initialAssessment: {
-        answers,
-        correctAnswersCount,
-        date: admin.firestore.Timestamp.now(),
-      },
+      initialAssessment,
       completedTasks: [],
-      progressHistory: [{
-        date: admin.firestore.Timestamp.now(),
-        waterprint: initialWaterprint,
-      }],
-    };
-
-    const profileRef = await admin.firestore().collection('WaterprintProfiles').add(profileData);
-
-    res.status(201).json({
-      profileId: profileRef.id,
-      message: 'Başlangıç profili oluşturuldu',
+      progressHistory: [{ date: now, waterprint: initialWaterprint }],
+      createdAt: now,
     });
+
+    res.status(201).json({ profileId: profileRef.id, message: 'Başlangıç profili oluşturuldu' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.error('Create profile error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -75,19 +73,22 @@ export const syncProfile = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { initialWaterprint, currentWaterprint, answers, correctAnswersCount } = req.body;
-    const userId = req.user?.userId;
+    const { answers, correctAnswersCount } = req.body;
+    const initialWaterprint = footprintValue(req.body.initialWaterprint);
+    const currentWaterprint = footprintValue(req.body.currentWaterprint);
+    if (initialWaterprint === null || currentWaterprint === null) {
+      return res.status(400).json({ message: 'Footprint values must be non-negative numbers' });
+    }
+    if (currentWaterprint > initialWaterprint) {
+      return res.status(400).json({ message: 'currentWaterprint cannot exceed initialWaterprint' });
+    }
 
-    const existing = await admin.firestore()
-      .collection('WaterprintProfiles')
-      .where('userId', '==', userId)
-      .limit(1)
-      .get();
-
+    const userId = req.user!.userId;
     const now = admin.firestore.Timestamp.now();
+    const existing = await findProfile(userId);
 
-    if (existing.empty) {
-      const profileRef = await admin.firestore().collection('WaterprintProfiles').add({
+    if (!existing) {
+      const profileRef = await profiles().add({
         userId,
         initialWaterprint,
         currentWaterprint,
@@ -98,14 +99,13 @@ export const syncProfile = async (req: AuthRequest, res: Response) => {
         },
         completedTasks: [],
         progressHistory: [{ date: now, waterprint: currentWaterprint }],
+        createdAt: now,
       });
       return res.status(201).json({ profileId: profileRef.id, message: 'Profil oluşturuldu' });
     }
 
-    const profileRef = existing.docs[0].ref;
-    const existingData = existing.docs[0].data();
-
-    await profileRef.update({
+    const existingData = existing.data() || {};
+    const update: Record<string, unknown> = {
       initialWaterprint,
       currentWaterprint,
       initialAssessment: {
@@ -114,15 +114,20 @@ export const syncProfile = async (req: AuthRequest, res: Response) => {
           correctAnswersCount ?? existingData.initialAssessment?.correctAnswersCount ?? 0,
         date: existingData.initialAssessment?.date || now,
       },
-      progressHistory: admin.firestore.FieldValue.arrayUnion({
+    };
+    // The app syncs on every launch; only a real change belongs in the history chart.
+    if (existingData.currentWaterprint !== currentWaterprint) {
+      update.progressHistory = admin.firestore.FieldValue.arrayUnion({
         date: now,
         waterprint: currentWaterprint,
-      }),
-    });
+      });
+    }
+    await existing.ref.update(update);
 
-    res.json({ profileId: existing.docs[0].id, message: 'Profil senkronize edildi' });
+    res.json({ profileId: existing.id, message: 'Profil senkronize edildi' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.error('Sync profile error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -133,72 +138,69 @@ export const updateWaterprint = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { currentWaterprint, taskId, waterprintReduction } = req.body;
-    const userId = req.user?.userId;
+    const { taskId } = req.body;
+    const waterprintReduction = footprintValue(req.body.waterprintReduction);
+    if (waterprintReduction === null) {
+      return res.status(400).json({ message: 'waterprintReduction must be a non-negative number' });
+    }
+    const userId = req.user!.userId;
 
-    const profileSnapshot = await admin.firestore()
-      .collection('WaterprintProfiles')
-      .where('userId', '==', userId)
-      .limit(1)
-      .get();
-
-    if (profileSnapshot.empty) {
+    const existing = await findProfile(userId);
+    if (!existing) {
       return res.status(404).json({ message: 'Profile not found' });
     }
 
-    const profileRef = profileSnapshot.docs[0].ref;
-    const profileData = profileSnapshot.docs[0].data();
+    const profileData = existing.data() || {};
+    // Reduce from the stored value; the client's copy may already include this reduction.
+    const stored = footprintValue(profileData.currentWaterprint) ?? footprintValue(profileData.initialWaterprint) ?? 0;
+    const newWaterprint = Math.max(0, stored - waterprintReduction);
+    const totalReduction = (footprintValue(profileData.initialWaterprint) ?? stored) - newWaterprint;
+    const now = admin.firestore.Timestamp.now();
 
-    const newWaterprint = currentWaterprint - waterprintReduction;
-    const totalReduction = profileData.initialWaterprint - newWaterprint;
-
-    await profileRef.update({
+    await existing.ref.update({
       currentWaterprint: newWaterprint,
       completedTasks: admin.firestore.FieldValue.arrayUnion({
         taskId,
         waterprintReduction,
-        completionDate: admin.firestore.Timestamp.now()
+        completionDate: now,
       }),
       progressHistory: admin.firestore.FieldValue.arrayUnion({
-        date: admin.firestore.Timestamp.now(),
-        waterprint: newWaterprint
-      })
+        date: now,
+        waterprint: newWaterprint,
+      }),
     });
 
-    res.json({
-      newWaterprint,
-      totalReduction
-    });
+    res.json({ newWaterprint, totalReduction });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.error('Update waterprint error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
-export const getProgress = async (req: Request, res: Response) => {
+export const getProgress = async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
+    if (userId !== req.user?.userId) {
+      return res.status(403).json({ message: 'Cannot read another user\'s progress' });
+    }
 
-    const profileSnapshot = await admin.firestore()
-      .collection('WaterprintProfiles')
-      .where('userId', '==', userId)
-      .limit(1)
-      .get();
-
-    if (profileSnapshot.empty) {
+    const existing = await findProfile(userId);
+    if (!existing) {
       return res.status(404).json({ message: 'Profile not found' });
     }
 
-    const profileData = profileSnapshot.docs[0].data();
+    const profileData = existing.data() || {};
 
     res.json({
       initialWaterprint: profileData.initialWaterprint,
       currentWaterprint: profileData.currentWaterprint,
       waterprintReduction: profileData.initialWaterprint - profileData.currentWaterprint,
-      correctAnswersCount: profileData.initialAssessment.correctAnswersCount,
-      completedTasks: profileData.completedTasks,
-      progressHistory: profileData.progressHistory
+      correctAnswersCount: profileData.initialAssessment?.correctAnswersCount ?? 0,
+      completedTasks: profileData.completedTasks || [],
+      progressHistory: profileData.progressHistory || [],
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error });
+    console.error('Get progress error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
-}; 
+};

@@ -1,8 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../config/jwt';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
 interface AdminJwtPayload {
   email: string;
@@ -22,7 +21,8 @@ export const verifyAdminToken = async (
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as AdminJwtPayload;
+    const decoded = jwt.verify(token, getJwtSecret()) as AdminJwtPayload;
+    const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 
     if (!ADMIN_EMAIL || !decoded.email || decoded.email !== ADMIN_EMAIL) {
       res.status(403).json({
@@ -42,9 +42,6 @@ export const verifyAdminToken = async (
     next();
   } catch (error) {
     console.error('Token verification error:', error);
-    res.status(401).json({
-      message: 'Invalid token.',
-      details: error instanceof Error ? error.message : 'Unknown error',
-    });
+    res.status(401).json({ message: 'Invalid token.' });
   }
 };

@@ -9,7 +9,9 @@
     "dev": "nodemon",
     "seed:challenge": "ts-node src/scripts/seed-challenge-users.ts",
     "test": "jest --passWithNoTests",
-    "test:integration": "jest tests/integration --passWithNoTests"
+    "test:integration": "jest tests/integration --passWithNoTests",
+    "e2e:server": "ts-node --transpile-only scripts/e2e-server.ts",
+    "test:api": "jest tests --testPathIgnorePatterns integration"
   },
   "engines": {
     "node": ">=18.0.0"

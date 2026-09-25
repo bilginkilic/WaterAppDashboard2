@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { message: 'Kayıt yapılamadı', error: error.message },
+      { message: 'Kayıt yapılamadı' },
       { status: 500 }
     );
   }

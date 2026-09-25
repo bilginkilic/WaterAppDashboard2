@@ -3,6 +3,8 @@
  * Requires API running at SEED_API_URL or http://localhost:3001/api
  */
 const API_BASE = process.env.SEED_API_URL || 'http://localhost:3001/api';
+// Live API only: set SEED_API_URL to run.
+const describeLive = process.env.SEED_API_URL ? describe : describe.skip;
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<{ status: number; data: T }> {
   const headers = {
@@ -17,7 +19,7 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<{ status
   return { status: res.status, data };
 }
 
-describe('Challenge API integration', () => {
+describeLive('Challenge API integration', () => {
   const runId = `it-${Date.now()}`;
   let token = '';
   let userId = '';

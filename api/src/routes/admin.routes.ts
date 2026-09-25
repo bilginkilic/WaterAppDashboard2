@@ -19,7 +19,7 @@ router.get('/leaderboards', verifyAdminToken, async (req: Request, res: Response
 });
 
 // Statistics endpoint
-router.get('/statistics', async (req: Request, res: Response): Promise<void> => {
+router.get('/statistics', verifyAdminToken, async (req: Request, res: Response): Promise<void> => {
   void getStatistics(req, res);
 });
 

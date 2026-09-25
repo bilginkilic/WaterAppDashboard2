@@ -128,6 +128,21 @@ Users can be labelled **MUFG Turkey** or **MUFG London**. The label is stored in
 - **Workflow:** add each e-mail to the "ldn" testers list in Play Console, then mark the request as added.
 - **QR codes:** regenerate with `npm run generate:qr` (set `SITE_URL` for another domain).
 
+## 🧪 Tests
+
+| Command | What it checks | Needs |
+|---|---|---|
+| `npm run test:api` | API contract (the mobile app's exact sync payload → stored documents) and security (tokens, ownership, admin-only routes) | nothing: in-memory Firebase |
+| `npm run test:unit` | `lib/footprint` (Firestore docs → dashboard rows), stats, organisations | nothing |
+| `npm run test:e2e:smoke` | public pages, redirects, admin APIs refuse anonymous calls | a running dashboard |
+| `npm run test:e2e:mocked` | organisation filter, reset, Android requests, download form | a local dashboard with `ADMIN_*` env |
+| `npm run test:e2e:local` | mobile payload → real Express API → dashboard UI, on one set of data | `(cd api && npm run e2e:server)` + local dashboard, `E2E_API_URL=http://localhost:3001` |
+| `npm run test:integrity` | read-only check of live data (footprint values, organisations, duplicates); prints counts and short uids only | `DASHBOARD_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD` |
+
+`api/scripts/e2e-server.ts` starts the API on an in-memory Firebase (`WATERAPP_FAKE_FIREBASE=1`, refused in production).
+The mobile repo's `npm run test:live` runs against it too. The API refuses to start on Render without `JWT_SECRET`.
+CI (`.github/workflows/ci.yml`) runs everything except the live-data checks.
+
 ## 📱 Related Applications
 
 - [WaterApp V2 iOS App](https://apps.apple.com/tr/app/waterapp-v2/id6745251786)
